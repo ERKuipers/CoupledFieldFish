@@ -85,6 +85,10 @@ class FishEnvironment(pcrfw.DynamicModel):
         unit = campo.TimeUnit.day # stepsize is day so each fish just gets older every day
         stepsize = 1
 
+        #feels like something like this should work: 
+        #self.fishenv.set_space_domain ()
+        #self.fishenv.moving = True 
+
         # print the run duration
         end = datetime.datetime.now() - init_start
         
@@ -116,23 +120,18 @@ class FishEnvironment(pcrfw.DynamicModel):
             for x,y in zip (self.bullsxcoords, self.bullsycoords): 
                 filewriter.writerow ([x,y])
         
-      
+
         self.bulls.char._domain = XYcoords # does not work to alter the domain using ._domain
         current_propertyset = 'char' + str(self.i) # trying to create alternating property sets for each timestep
         previous_prop = 'char' + str(self.i - 1)
 
-        # Create a dictionary entry for the changing property set
-        self.property_sets[current_propertyset] = ('bulls_coordinates' + str(self.i) +  '.csv')
-
-        local_prop = self.property_sets[current_propertyset]
-
-        # Use the dictionary to access properties
-        self.bulls.add_property_set('location', ('bulls_coordinates' + str(self.i) +  '.csv'))
+        # Use overwrite the character each time with different 
+        # self.bulls.add_property_set('char', ('bulls_coordinates' + str(self.i) +  '.csv'))
         
         # Create a dynamic property and update age
          # cannot add values to a propertyset that is defined in the dynamic because the property needs to be added (no property 'age' in property set location)
-        # self.bulls.location.age = self.bulls.location.age + 1 * self.timestep
-        # self.bulls.location.is_dynamic = True
+        self.bulls.char.age = self.bulls.char.age + 1 * self.timestep
+       
         # write the lue dataset
         self.fishenv.write()
         self.fishenv.write(self.currentTimeStep())
