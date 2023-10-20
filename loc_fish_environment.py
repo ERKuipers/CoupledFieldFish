@@ -100,6 +100,7 @@ class FishEnvironment(pcrfw.DynamicModel):
         
         start = datetime.datetime.now()
         self.i = self.i + self.timestep # setting manually a counter for a timestep
+        self.fishenv.create_dataset(str("fish_environment"+str(self.i)+".lue")) #create lue environment to add time(steps) to and rest of domain knowledge + properties : 
 
         #### get the coordinates for each agent #### getting the x_coordinates (wow this is so intuitive im impressed)
         # for a specific property set # 
@@ -111,32 +112,14 @@ class FishEnvironment(pcrfw.DynamicModel):
         # set them to the space domain 
         self.bulls.char._space_domain.xcoord = alteredxcoords 
         self.bulls.char._space_domain.ycoord = alteredycoords
-        # does not work, is not overwritten
-
-        XYcoords = pd.DataFrame({'CoordX': self.bullsxcoords, 'CoordY': self.bullsycoords})
-        coords_file = 'bulls_coordinates' + str(self.i) +  '.csv'
-        with open (str(coords_file), 'w', newline = '') as csvfile:
-            filewriter = csv.writer(csvfile, delimiter=',', quotechar=' ', quoting=csv.QUOTE_NONNUMERIC)
-            for x,y in zip (self.bullsxcoords, self.bullsycoords): 
-                filewriter.writerow ([x,y])
         
-
-        self.bulls.char._domain = XYcoords # does not work to alter the domain using ._domain
-        current_propertyset = 'char' + str(self.i) # trying to create alternating property sets for each timestep
-        previous_prop = 'char' + str(self.i - 1)
-
-        # Use overwrite the character each time with different 
-        # self.bulls.add_property_set('char', ('bulls_coordinates' + str(self.i) +  '.csv'))
-        
-        # Create a dynamic property and update age
-         # cannot add values to a propertyset that is defined in the dynamic because the property needs to be added (no property 'age' in property set location)
+        # Create a dynamic property and update age to add to this specific 
         self.bulls.char.age = self.bulls.char.age + 1 * self.timestep
        
         # write the lue dataset
         self.fishenv.write()
         self.fishenv.write(self.currentTimeStep())
 
-        
         end = datetime.datetime.now() - start
         print(f'ts:  {end}  write')
         

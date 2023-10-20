@@ -6,8 +6,9 @@ import matplotlib.pyplot as plt
 import datetime 
 os.chdir("C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/")
 
-dataset = ldm.open_dataset('fish_environment.lue')
+#dataset = ldm.open_dataset('fish_environment.lue')
 for i in range(1, 13):
+    dataset = ldm.open_dataset(str('fish_environment'+str(i)+'.lue'))
     dataframe = campo.dataframe.select(dataset.bulls, property_names=['age'])
     campo.to_gpkg(dataframe, 'bulls.gpkg', 'EPSG:28992', i)
 
