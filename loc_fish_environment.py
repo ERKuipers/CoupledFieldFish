@@ -99,6 +99,7 @@ class FishEnvironment(pcrfw.DynamicModel):
         end = datetime.datetime.now() - init_start
         space_domain = self.bulls.char._space_domain
         self.i = 0 # setting 0 as numeric simple timestep
+        self.property_sets = {} # save different property set names as dictionary
         print(f'init: {end}')
 
     def dynamic(self):
@@ -106,9 +107,6 @@ class FishEnvironment(pcrfw.DynamicModel):
         start = datetime.datetime.now()
         self.i = self.i + self.timestep # setting manually a counter for a timestep
         
-    
-        # update age
-        self.bulls.char.age = self.bulls.char.age + 1 *self.timestep
 
 
         #### get the coordinates for each agent #### getting the x_coordinates (wow this is so intuitive im impressed)
@@ -126,6 +124,7 @@ class FishEnvironment(pcrfw.DynamicModel):
         ## hmm how does the dynamic work in the sense that this is not written to the disk? 
         # because domain is changing, the property set does not have the same domain anymore. Changing the domain of the propertyset over time seems therefore to be prohibited. However, should i add a new property set or make it time dependent? 
         #self.bulls.char.set_space_domain (variable ) # i can access the coordinates but not overwrite them as part of the xarray !! this xarray format seems to be important 
+        # if i dont know this by the end of today, mail Oliver !!! 
         XYcoords = pd.DataFrame({'CoordX': self.bullsxcoords, 'CoordY': self.bullsycoords})
         coords_file = 'bulls_coordinates' + str(self.i) +  '.csv'
         with open (str(coords_file), 'w', newline = '') as csvfile:
@@ -135,13 +134,23 @@ class FishEnvironment(pcrfw.DynamicModel):
         
       
         self.bulls.char._domain = XYcoords 
+        current_propertyset = 'char' + str(self.i)
+        previous_prop = 'char' + str(self.i - 1)
+
+        # Create a dictionary entry for the changing property set
+        self.property_sets[current_propertyset] = ('bulls_coordinates' + str(self.i) +  '.csv')
+
+        local_prop = self.property_sets[current_propertyset]
+
+        # Use the dictionary to access properties
+        self.bulls.add_property_set(local_prop, ('bulls_coordinates' + str(self.i) +  '.csv'))
         
-        #self.bulls.char._domain
-        #self.bulls.char.set_space_domain(variable, values)
-        # print run duration info
+        # Create a dynamic property and update age
+        self.bulls.local_prop.is_dynamic = True
+        self.bulls.local_prop.age = self.bulls[previous_prop].age + 1 * self.timestep
+
         self.fishenv.write(self.currentTimeStep())
 
-        
         end = datetime.datetime.now() - start
         print(f'ts:  {end}  write')
         
