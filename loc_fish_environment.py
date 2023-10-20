@@ -52,23 +52,15 @@ class FishEnvironment(pcrfw.DynamicModel):
         #add location of bulls # characteristics being the property set with a certain domain 
         # setting a property set by its initial domain 
         self.bulls.add_property_set('char', 'bulls_coordinates.csv') # length of number of elements should be two (coordinates) for it to be a point agent or 6 for it to be a field agent
-        self.bulls._read_domain('bulls_coordinates.csv') # notice how for calling a function with self, you already give one argument 
-        
+                
         ##########################
         # set initial random age of bulls
         self.bulls.char.lower = 0 # days
         self.bulls.char.upper = 50 
         self.bulls.char.age = campo.uniform(self.bulls.char.lower, self.bulls.char.upper, seed)
 
-        # add the surroundings property set
-        # self.bulls.add_property_set('sur', 'households_surrounding.csv')
-
-        # calculate distance away from center
-        # assign location of shop to property in surroundings property set
-
         # technical detail
         self.bulls.set_epsg(28992)
-
 
         self.timestep = 1 # one day 
         # create real time settings for lue
@@ -78,11 +70,11 @@ class FishEnvironment(pcrfw.DynamicModel):
         unit = campo.TimeUnit.day
         stepsize = 1
 
-        # technical detail
+        # set as dynamic 
         self.bulls.char.age.is_dynamic = True
         
         # create the output lue data set
-        #self.xcoords = self.bulls.char._space_domain.xcoord # calling the xcoords as a part of the fish environment ? 
+
         self.fishenv.create_dataset("fish_environment.lue") #create lue environment to add time(steps) to and rest of domain knowledge + properties : 
         
         self.fishenv.set_time(start, unit, stepsize, self.nrTimeSteps())
@@ -92,12 +84,10 @@ class FishEnvironment(pcrfw.DynamicModel):
         start = datetime.datetime.combine(date, time)
         unit = campo.TimeUnit.day # stepsize is day so each fish just gets older every day
         stepsize = 1
-        # write the lue dataset
-        self.fishenv.write()
 
         # print the run duration
         end = datetime.datetime.now() - init_start
-        space_domain = self.bulls.char._space_domain
+        
         self.i = 0 # setting 0 as numeric simple timestep
         self.property_sets = {} # save different property set names as dictionary
         print(f'init: {end}')
@@ -106,25 +96,19 @@ class FishEnvironment(pcrfw.DynamicModel):
         
         start = datetime.datetime.now()
         self.i = self.i + self.timestep # setting manually a counter for a timestep
-        
-
 
         #### get the coordinates for each agent #### getting the x_coordinates (wow this is so intuitive im impressed)
         # for a specific property set # 
         self.bullsxcoords = self.bulls.char._space_domain.xcoord
         self.bullsycoords = self.bulls.char._space_domain.ycoord 
         ## alter the coordinates 
-        self.bullsxcoords = self.bullsxcoords + 10 * self.timestep 
-        self.bullsycoords = self.bullsycoords + 10 * self.timestep
+        alteredxcoords = self.bullsxcoords + 10 * self.timestep 
+        alteredycoords = self.bullsycoords + 10 * self.timestep
         # set them to the space domain 
-        self.bulls.char._space_domain.xcoord = self.bullsxcoords 
-        self.bulls.char._space_domain.ycoord = self.bullsycoords
+        self.bulls.char._space_domain.xcoord = alteredxcoords 
+        self.bulls.char._space_domain.ycoord = alteredycoords
+        # does not work, is not overwritten
 
-        # overwrite csv or create csv that is dependent on timestep in the dynamic with the x and y coordinates , add x and y to it 
-        ## hmm how does the dynamic work in the sense that this is not written to the disk? 
-        # because domain is changing, the property set does not have the same domain anymore. Changing the domain of the propertyset over time seems therefore to be prohibited. However, should i add a new property set or make it time dependent? 
-        #self.bulls.char.set_space_domain (variable ) # i can access the coordinates but not overwrite them as part of the xarray !! this xarray format seems to be important 
-        # if i dont know this by the end of today, mail Oliver !!! 
         XYcoords = pd.DataFrame({'CoordX': self.bullsxcoords, 'CoordY': self.bullsycoords})
         coords_file = 'bulls_coordinates' + str(self.i) +  '.csv'
         with open (str(coords_file), 'w', newline = '') as csvfile:
@@ -133,8 +117,8 @@ class FishEnvironment(pcrfw.DynamicModel):
                 filewriter.writerow ([x,y])
         
       
-        self.bulls.char._domain = XYcoords 
-        current_propertyset = 'char' + str(self.i)
+        self.bulls.char._domain = XYcoords # does not work to alter the domain using ._domain
+        current_propertyset = 'char' + str(self.i) # trying to create alternating property sets for each timestep
         previous_prop = 'char' + str(self.i - 1)
 
         # Create a dictionary entry for the changing property set
@@ -143,14 +127,17 @@ class FishEnvironment(pcrfw.DynamicModel):
         local_prop = self.property_sets[current_propertyset]
 
         # Use the dictionary to access properties
-        self.bulls.add_property_set(local_prop, ('bulls_coordinates' + str(self.i) +  '.csv'))
+        self.bulls.add_property_set('location', ('bulls_coordinates' + str(self.i) +  '.csv'))
         
         # Create a dynamic property and update age
-        self.bulls.local_prop.is_dynamic = True
-        self.bulls.local_prop.age = self.bulls[previous_prop].age + 1 * self.timestep
-
+         # cannot add values to a propertyset that is defined in the dynamic because the property needs to be added (no property 'age' in property set location)
+        # self.bulls.location.age = self.bulls.location.age + 1 * self.timestep
+        # self.bulls.location.is_dynamic = True
+        # write the lue dataset
+        self.fishenv.write()
         self.fishenv.write(self.currentTimeStep())
 
+        
         end = datetime.datetime.now() - start
         print(f'ts:  {end}  write')
         
