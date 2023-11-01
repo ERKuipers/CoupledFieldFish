@@ -56,15 +56,7 @@ class FishEnvironment(pcrfw.DynamicModel):
         self.bulls.char.upper = 50
         self.bulls.char.age = campo.uniform(self.bulls.char.lower, self.bulls.char.upper, seed)
 
-        # add the surroundings property set
-        # self.bulls.add_property_set('sur', 'households_surrounding.csv')
-
-        # calculate distance away from center
-        # assign location of shop to property in surroundings property set
-
-        # technical detail
         self.bulls.set_epsg(28992)
-
 
         self.timestep = 1 # one day 
         # create real time settings for lue
