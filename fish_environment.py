@@ -69,7 +69,6 @@ class FishEnvironment(pcrfw.DynamicModel):
 
         # technical detail
         self.bulls.char.age.is_dynamic = True
-        #self.bulls.char.age = 0.0 # temporary value
     
         self.timestep = 1
         # create the output lue data set
@@ -92,7 +91,7 @@ class FishEnvironment(pcrfw.DynamicModel):
     
         start = datetime.datetime.now()
 
-        # update household propensity
+        # update age
         self.bulls.char.age = self.bulls.char.age + 1 *self.timestep
         #self.timestep 
                        

@@ -59,7 +59,7 @@ class FishEnvironment(pcrfw.DynamicModel):
         self.bulls.char.upper = 50 
         self.bulls.char.age = campo.uniform(self.bulls.char.lower, self.bulls.char.upper, seed)
 
-        # technical detail
+        # set crs 
         self.bulls.set_epsg(28992)
 
         self.timestep = 1 # one day 

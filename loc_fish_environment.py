@@ -5,11 +5,11 @@ import pandas as pd
 import pcraster.framework as pcrfw
 import csv
 import campo
+from getandsetcoords import getandsetcoords
 
 seed = 5 # to make sure random values generated are similar the second time running the program
 pcr.setrandomseed(seed)
 os.chdir("C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/")
-
 
 with open ('bulls_coordinates.csv', 'w', newline ='') as csvfile: # creating a file to store correct amount of csv 
         filewriter = csv.writer(csvfile, delimiter=',', quotechar=' ', quoting=csv.QUOTE_NONNUMERIC)
@@ -102,16 +102,7 @@ class FishEnvironment(pcrfw.DynamicModel):
         self.i = self.i + self.timestep # setting manually a counter for a timestep
         self.fishenv.create_dataset(str("fish_environment"+str(self.i)+".lue")) #create lue environment to add time(steps) to and rest of domain knowledge + properties : 
 
-        #### get the coordinates for each agent #### getting the x_coordinates (wow this is so intuitive im impressed)
-        # for a specific property set # 
-        self.bullsxcoords = self.bulls.char._space_domain.xcoord
-        self.bullsycoords = self.bulls.char._space_domain.ycoord 
-        ## alter the coordinates 
-        alteredxcoords = self.bullsxcoords + 10 * self.timestep 
-        alteredycoords = self.bullsycoords + 10 * self.timestep
-        # set them to the space domain 
-        self.bulls.char._space_domain.xcoord = alteredxcoords 
-        self.bulls.char._space_domain.ycoord = alteredycoords
+        getandsetcoords (self)
         
         # Create a dynamic property and update age to add to this specific 
         self.bulls.char.age = self.bulls.char.age + 1 * self.timestep
