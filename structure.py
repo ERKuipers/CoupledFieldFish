@@ -49,9 +49,7 @@ class FishEnvironment(pcrfw.DynamicModel):
         start = datetime.datetime.now()
         self.timestep += 1 
         self.fishenv.water.area.flow_velocity =  'flow_velocity'+str(self.timestep)+'.tif') # overwriting flow velocity for a specific timestep to 
-        # make a buffer around the fishes location
-        # make a buffer that relates preference of flow velocity to actual flow velocity in to a likelihood raster 
-        # make agents move on the basis of both the fields as well as the property of the fish 
+        
         self.fishenv.bulls.add_property_set ('surroundings', 'age_related_buffer'+str(self.timestep) +'.tif' ) 
 
         self.fishenv.write(self.currentTimeStep())

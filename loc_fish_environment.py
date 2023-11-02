@@ -9,14 +9,15 @@ import sys
 sys.path.append('C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/CoupledFieldFish/getandsetcoords.py')
 from getandsetcoords import getandsetcoords
 
-os.chdir("C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/")
+os.chdir("C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish")
 seed = 5 # to make sure random values generated are similar the second time running the program
 pcr.setrandomseed(seed)
 
+filedump = "C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/"
 
 with open ('bulls_coordinates.csv', 'w', newline ='') as csvfile: # creating a file to store correct amount of csv 
         filewriter = csv.writer(csvfile, delimiter=',', quotechar=' ', quoting=csv.QUOTE_NONNUMERIC)
-        with open ('coords_grensmaas.csv', 'r') as f: # by reading a file with point coordinats
+        with open ('fish/coords_grensmaas.csv', 'r') as f: # by reading a file with point coordinats
             reader = csv.reader (f)
             next(reader, None) #skip the header
             for row in reader: 
@@ -54,7 +55,7 @@ class FishEnvironment(pcrfw.DynamicModel):
         
         #add location of bulls # characteristics being the property set with a certain domain 
         # setting a property set by its initial domain 
-        self.bulls.add_property_set('char', 'bulls_coordinates.csv') # length of number of elements should be two (coordinates) for it to be a point agent or 6 for it to be a field agent
+        self.bulls.add_property_set('char', 'fish/bulls_coordinates.csv') # length of number of elements should be two (coordinates) for it to be a point agent or 6 for it to be a field agent
                 
         ##########################
         # set initial random age of bulls

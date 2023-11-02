@@ -12,7 +12,7 @@ def getandsetcoords (self):
     self.bulls.char._space_domain.xcoord = alteredxcoords 
     self.bulls.char._space_domain.ycoord = alteredycoords
 
-
+    # optional writing to a csv, import csv 
     # coords_file = 'bulls_coordinates' + str(self.i) +  '.csv'
     # with open (str(coords_file), 'w', newline = '') as csvfile:
     #     filewriter = csv.writer(csvfile, delimiter=',', quotechar=' ', quoting=csv.QUOTE_NONNUMERIC)
