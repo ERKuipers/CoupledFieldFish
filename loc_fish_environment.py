@@ -5,11 +5,14 @@ import pandas as pd
 import pcraster.framework as pcrfw
 import csv
 import campo
+import sys
+sys.path.append('C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/CoupledFieldFish/getandsetcoords.py')
 from getandsetcoords import getandsetcoords
 
+os.chdir("C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/")
 seed = 5 # to make sure random values generated are similar the second time running the program
 pcr.setrandomseed(seed)
-os.chdir("C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/")
+
 
 with open ('bulls_coordinates.csv', 'w', newline ='') as csvfile: # creating a file to store correct amount of csv 
         filewriter = csv.writer(csvfile, delimiter=',', quotechar=' ', quoting=csv.QUOTE_NONNUMERIC)
@@ -57,7 +60,7 @@ class FishEnvironment(pcrfw.DynamicModel):
         # set initial random age of bulls
         self.bulls.char.lower = 0 # days
         self.bulls.char.upper = 50 
-        self.bulls.char.age = campo.uniform(self.bulls.char.lower, self.bulls.char.upper, seed)
+        self.bulls.char.age = campo.uniform(self.bulls.char.lower, self.bulls.char.upper)
 
         # technical detail
         self.bulls.set_epsg(28992)

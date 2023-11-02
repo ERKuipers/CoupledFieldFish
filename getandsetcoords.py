@@ -13,9 +13,9 @@ def getandsetcoords (self):
     self.bulls.char._space_domain.ycoord = alteredycoords
 
 
-    coords_file = 'bulls_coordinates' + str(self.i) +  '.csv'
-    with open (str(coords_file), 'w', newline = '') as csvfile:
-        filewriter = csv.writer(csvfile, delimiter=',', quotechar=' ', quoting=csv.QUOTE_NONNUMERIC)
-        for x,y in zip (self.bullsxcoords, self.bullsycoords): 
-            filewriter.writerow ([x,y])
+    # coords_file = 'bulls_coordinates' + str(self.i) +  '.csv'
+    # with open (str(coords_file), 'w', newline = '') as csvfile:
+    #     filewriter = csv.writer(csvfile, delimiter=',', quotechar=' ', quoting=csv.QUOTE_NONNUMERIC)
+    #     for x,y in zip (self.bullsxcoords, self.bullsycoords): 
+    #         filewriter.writerow ([x,y])
     
