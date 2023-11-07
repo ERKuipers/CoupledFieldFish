@@ -8,7 +8,7 @@ import campo
 seed = 5
 pcr.setrandomseed(seed)
 os.chdir("C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish")
-
+scratch_dir = "C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/scratch"
 
 class FishEnvironment(pcrfw.DynamicModel):
 
@@ -48,10 +48,12 @@ class FishEnvironment(pcrfw.DynamicModel):
     def dynamic(self):
         start = datetime.datetime.now()
         self.timestep += 1 
-        self.fishenv.water.area.flow_velocity =  'flow_velocity'+str(self.timestep)+'.tif') # overwriting flow velocity for a specific timestep to 
+        self.fishenv.water.area.flow_velocity =  ('flow_velocity'+str(self.timestep)+'.tif') # overwriting flow velocity for a specific timestep to 
         
+        # add from the surroundings function
         self.fishenv.bulls.add_property_set ('surroundings', 'age_related_buffer'+str(self.timestep) +'.tif' ) 
-
+        # call surroundings function and add to bulls phenomenon: likelihood of travel 
+        
         self.fishenv.write(self.currentTimeStep())
         end = datetime.datetime.now() - start
         print(f'ts:  {end}  write')
