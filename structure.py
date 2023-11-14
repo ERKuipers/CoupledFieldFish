@@ -2,13 +2,17 @@ import datetime
 import os
 import pcraster as pcr
 import pcraster.framework as pcrfw
-
+from xugrid import ugrid_rasterize
 import campo
 
 seed = 5
 pcr.setrandomseed(seed)
-os.chdir("C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish")
+
 scratch_dir = "C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/scratch"
+os.chdir(scratch_dir)
+general = "C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish"
+maas_extent = "C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/maas_data/maps/water_xy.csv"
+babybulls_pref = 'babybulls_pref.xlsx'
 
 class FishEnvironment(pcrfw.DynamicModel):
 
@@ -20,21 +24,29 @@ class FishEnvironment(pcrfw.DynamicModel):
 
 
     def initial(self):
+        init_start = datetime.datetime.now()
+
+        self.fishenv = campo.Campo()
         # create real time settings for lue
         date = datetime.date(2000, 1, 2)
         time = datetime.time(12, 34)
         start = datetime.datetime.combine(date, time)
         unit = campo.TimeUnit.month
         stepsize = 4
-        self.babybulls_pref = 'babybulls_pref.xlsx',  
         
+
+        # set the duration (years) of one time step
+        self.timestep = 0.333333
+
+        # create the output lue data set
+        self.fishenv.create_dataset("food_environment.lue")
         self.fishenv.set_time(start, unit, stepsize, self.nrTimeSteps())
-        self.fishenv_add_phenomenon ('bulls')
-        self.fishenv.bulls.add_property_set ('bulls_loc', 'bull_agents.shp')  # --> convert to .csv for campo
-    
-        self.fishenv_add_phenomenon ('water')
-        self.fishenv_add_property_set ('area') # the water area always has the same spatial as well as temporal extent (it always exists)
-    
+        # self.fishenv.add_phenomenon ('bulls')
+        # self.fishenv.bulls.add_property_set ('bulls_loc', 'bull_agents.shp')  # --> convert to .csv for campo
+        # self.fishenv.bulls.set_epsg(28992)
+        self.water = self.fishenv.add_phenomenon ('water') # could we possibly reduce the first step of this? 
+        self.water.add_property_set ('area', maas_extent) # the water area always has the same spatial as well as temporal extent (it always exists)
+        
         self.timestep = 0
         # set crs
   

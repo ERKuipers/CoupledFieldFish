@@ -54,7 +54,7 @@ class FishEnvironment(pcrfw.DynamicModel):
         # set initial random age of bulls
         self.bulls.char.lower = 0 # days
         self.bulls.char.upper = 50
-        self.bulls.char.age = campo.uniform(self.bulls.char.lower, self.bulls.char.upper, seed)
+        self.bulls.char.age = campo.uniform(self.bulls.char.lower, self.bulls.char.upper)
 
         self.bulls.set_epsg(28992)
 
