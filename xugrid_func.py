@@ -1,27 +1,8 @@
 # -*- coding: utf-8 -*-
-"""
-Created on Mon Jul 17 16:53:10 2023
-
-@author: Straa005 
-
-modified by Els Kuipers 7/11/23
-- altered listing of imports to prevent circular dependency of packages 
-- made function out of it 
-- first opening dataset with xarray to make it a data array instead of doing that with xu 
-"""
 #%% 
-# from osgeo import gdal
-#import netCDF4
-#import shapely
-
-#import geopandas as gpd
 import xarray as xr
 import xugrid as xu # CIRCULAR DEPENDENCY of the package with geopandas and xarray
 
-
-# dependencies = inspect.getmodule(xu).__all__
-#import rioxarray
-# import geopandas as gpd # GEOPANDAS IS alread y a dependency of xugrid
 import numpy as np
 import os
 import matplotlib.pyplot as plt
