@@ -66,7 +66,6 @@ class FishEnvironment(pcrfw.DynamicModel):
         unit = campo.TimeUnit.month
         stepsize = 4
 
-
         # technical detail
         self.bulls.char.age.is_dynamic = True
     
