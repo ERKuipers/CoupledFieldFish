@@ -8,13 +8,14 @@ import os
 import matplotlib.pyplot as plt
 
 #%% rasterize function
-def ugrid_rasterize (ugrid_filelocation, resolution,timestep):
+def ugrid_rasterize (ugrid_filelocation, resolution, timestep, var):
     '''
     Parameters
     ----------
     ugrid_filelocation : location of .nc file 
     resolution : resolution to rasterize variable in 
     timestep 
+    var = variable to get
 
     Returns
     -------
@@ -23,11 +24,11 @@ def ugrid_rasterize (ugrid_filelocation, resolution,timestep):
     '''
     ds = xr.open_dataset(ugrid_filelocation)
     uds = (xu.UgridDataset(ds))
-    # uds = uds.ugrid.set_crs("EPSG:28992") # removes, strangely enough, the whol accessing
-    # rasterize
-    # whole area
-    # ugrid.rasterize(resolution as in spacing in x and y by sampling)
-    xr_raster = uds['mesh2d_ucmag'].isel(time=timestep).ugrid.rasterize(resolution) # ugrid is de accessor hier. 
+    print(uds.data_vars)
+    var_dict = {}
+    var_dict ['flow_velocity']= {'mesh2d_ucmag'}
+    var_dict ['water_depth'] = {'mesh2d_waterdepth'}
+    xr_raster = uds[var_dict[var]].isel(time=timestep).ugrid.rasterize(resolution) # ugrid is de accessor hier. 
     xr_rasterized = xr_raster.rio.write_crs ("epsg:28992")
     
     return xr_rasterized

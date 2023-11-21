@@ -6,7 +6,7 @@ scratch_dir = "C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/maas_
 os.chdir(scratch_dir) 
 map_nc = "C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/maas_data/new_fm_map.nc" #netcdf 
 resolution = 5
-xr_array = ugrid_rasterize(map_nc, resolution,20)
+xr_array = ugrid_rasterize(map_nc, resolution, 20, 'flow_velocity')
 
 # make pandas dataframe and get min and max values
 pd_xy = (xr_array.to_dataframe()).reset_index()[['x','y']]

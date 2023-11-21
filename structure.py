@@ -33,6 +33,7 @@ class FishEnvironment(pcrfw.DynamicModel):
 
     def initial(self):
         init_start = datetime.datetime.now()
+        self.timestep = 0 
 
         self.fishenv = campo.Campo()
         # create real time settings for lue
@@ -46,53 +47,68 @@ class FishEnvironment(pcrfw.DynamicModel):
         # create the output lue data set
         self.fishenv.create_dataset("fish_environment.lue")
         self.fishenv.set_time(start, unit, stepsize, self.nrTimeSteps())
-        # water properties
+
+        ####################
+        # Phenomenon Water #
+        ####################
         self.water = self.fishenv.add_phenomenon ('water') # could we possibly reduce the first step of this? 
+        self.water.set_epsg(28992)
+        # Property Set Area # 
         self.water.add_property_set ('area', test_extent) # the water area always has the same spatial as well as temporal extent (it always exists)
-        print ('added the field as a domain') # takes a loooooooooooong time 
+        print ('added the field as a domain') 
         self.water.area.lower = 0 # days
         self.water.area.upper = 1
+        #  Property Flow velocity # 
         self.water.area.flow_velocity = campo.uniform(self.water.area.lower, self.water.area.upper) 
-        #self.water.area.flow_velocity.is_dynamic = True
-        # set crs
-        self.water.set_epsg(28992)
-
-        ### salmon ###
+        self.water.area.flow_velocity.is_dynamic = True
+        # Property Water Depth # 
+        self.water.area.water_depth = campo.uniform(self.water.area.lower, self.water.area.upper) 
+        self.water.area.water_depth.is_dynamic = True
+        # why is this dynamic 
+        ###################
+        # Phenomenon Fish #
+        ###################
         self.fish = self.fishenv.add_phenomenon ('fish') # could we possibly reduce the first step of this? 
-        self.fish.add_property_set ('salmon', loc_CSV ) # the water area always has the same spatial as well as temporal extent (it always exists)
-        
-        self.fish.salmon.lower = 0 # days
-        self.fish.salmon.upper = 50
-        self.fish.salmon.age = campo.uniform(self.fish.salmon.lower, self.fish.salmon.upper)
-        # salmon age changes over time and salmon items are mobile 
-        self.fish.salmon.age.is_dynamic = True
         self.fish.is_mobile = True 
         self.fish.set_epsg(28992)
-        
+        # Property Set Salmon 
+        self.fish.add_property_set ('salmon', loc_CSV ) # the water area always has the same spatial as well as temporal extent (it always exists)
+        self.fish.salmon.lower = 0 # days
+        self.fish.salmon.upper = 50
+        # Property Age
+        self.fish.salmon.age = campo.uniform(self.fish.salmon.lower, self.fish.salmon.upper)
+        self.fish.salmon.age.is_dynamic = True # salmon age changes over time and salmon items are mobile 
+        # Properties Coordinates        
+        self.fish.salmon.coordx = (self.fish.salmon.get_space_domain(self.timestep)).xcoord 
+        self.fish.salmon.coordy = (self.fish.salmon.get_space_domain(self.timestep)).xcoord 
+        self.fish.salmon.coordx.is_dynamic = True # mobility is dynamic haha 
+        self.fish.salmon.coordy.is_dynamic = True 
+
+
         self.timestep = 0   
-        # write the lue dataset
-        self.fishenv.write()
-        # print the run duration
-        end = datetime.datetime.now() - init_start
+        self.fishenv.write() # write the lue dataset
+        end = datetime.datetime.now() - init_start # print the run duration
         print(f'init: {end}')
 
     def dynamic(self):
         start = datetime.datetime.now()
         self.timestep += 1 
-        # self.water.area.flow_velocity = (ugrid_rasterize (map_nc, 5, self.timestep)).values # properties can have the following shape: np.ndarray, or property.Property, or int or float. 
+        self.water.area.flow_velocity = (ugrid_rasterize (map_nc, 5, self.timestep, 'flow_velocity')).values # properties can have the following shape: np.ndarray, or property.Property, or int or float. 
+        self.water.area.water_depth = (ugrid_rasterize (map_nc, 5, self.timestep, 'water_depth')).values
         print (self.timestep)
-
+        # self.water.area.water_depth = (ugrid_rasterize (map_nc, 5, self.timestep)).values 
 
         # add from the surroundings function
         # self.fishenv.bulls.add_property_set ('surroundings', 'age_related_buffer'+str(self.timestep) +'.tif' ) 
         # call surroundings function and add to bulls phenomenon: likelihood of travel 
         # move agents over field: 
-
         salmon_coords = self.fish.salmon.get_space_domain(self.timestep)
-        no_moving_mask = campo.where (self.water.area.waterdepth > 0, 1, 0) # binary mask from where not to move to
-        salmon_coords.xcoord = campo.where (self.water.area.waterdepth > 0, salmon_coords.xcoord + 1, salmon_coords.xcoord - 1) 
-        salmon_coords.ycoord = campo.where (self.water.area.waterdepth > 0, salmon_coords.ycoord + 1, salmon_coords.ycoord - 1)
-
+        self.fish.salmon.coordy = salmon_coords.ycoord
+        self.fish.salmon.coordx = salmon_coords.xcoord 
+        # bouncing off of the border 
+        salmon_coords.xcoord = campo.where (self.water.area.flow_velocity > 0, self.fish.salmon.coordx + 1, self.fish.salmon.coordx - 1) 
+        salmon_coords.ycoord = campo.where (self.water.area.flow_velocity > 0, self.fish.salmon.coordy + 1, self.fish.salmon.coordy - 1)
+        
         self.fish.salmon.set_space_domain(salmon_coords, self.timestep)
 
         self.fishenv.write(self.currentTimeStep())
