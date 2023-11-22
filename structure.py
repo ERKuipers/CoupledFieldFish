@@ -4,7 +4,6 @@ import datetime
 import os
 import pcraster as pcr
 import pcraster.framework as pcrfw
-
 import xarray as xr
 import xugrid as xu
 from xugrid_func import ugrid_rasterize
@@ -64,7 +63,8 @@ class FishEnvironment(pcrfw.DynamicModel):
         # Property Water Depth # 
         self.water.area.water_depth = campo.uniform(self.water.area.lower, self.water.area.upper) 
         self.water.area.water_depth.is_dynamic = True
-        # why is this dynamic 
+        # why is this now static? 
+
         ###################
         # Phenomenon Fish #
         ###################
@@ -92,9 +92,11 @@ class FishEnvironment(pcrfw.DynamicModel):
 
     def dynamic(self):
         start = datetime.datetime.now()
+        
+        ds_u = (ugrid_rasterize (map_nc, 5, self.timestep, 'flow_velocity')) # properties can have the following shape: np.ndarray, or property.Property, or int or float. 
+        self.water.area.flow_velocity = ds_u['mesh2d_ucmag'].values
+        #self.water.area.water_depth = (ugrid_rasterize (map_nc, 5, self.timestep, 'water_depth')).values
         self.timestep += 1 
-        self.water.area.flow_velocity = (ugrid_rasterize (map_nc, 5, self.timestep, 'flow_velocity')).values # properties can have the following shape: np.ndarray, or property.Property, or int or float. 
-        self.water.area.water_depth = (ugrid_rasterize (map_nc, 5, self.timestep, 'water_depth')).values
         print (self.timestep)
         # self.water.area.water_depth = (ugrid_rasterize (map_nc, 5, self.timestep)).values 
 
@@ -121,5 +123,10 @@ if __name__ == "__main__":
     myModel = FishEnvironment()
     dynFrw = pcrfw.DynamicFramework(myModel, timesteps)
     dynFrw.run()
+
+
+
+
+
 
 

@@ -24,7 +24,7 @@ def ugrid_rasterize (ugrid_filelocation, resolution, timestep, var):
     '''
     ds = xr.open_dataset(ugrid_filelocation)
     uds = (xu.UgridDataset(ds))
-    print(uds.data_vars)
+    # print(uds.data_vars)
     var_dict = {}
     var_dict ['flow_velocity']= {'mesh2d_ucmag'}
     var_dict ['water_depth'] = {'mesh2d_waterdepth'}
