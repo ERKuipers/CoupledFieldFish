@@ -42,7 +42,7 @@ class FishEnvironment(pcrfw.DynamicModel):
         unit = campo.TimeUnit.month
         stepsize = 4
         
-        self.timestep = 1
+        self.timestep = 0
         # create the output lue data set
         self.fishenv.create_dataset("fish_environment.lue")
         self.fishenv.set_time(start, unit, stepsize, self.nrTimeSteps())
@@ -58,8 +58,8 @@ class FishEnvironment(pcrfw.DynamicModel):
         self.water.area.lower = 0 # days
         self.water.area.upper = 1
         #  Property Flow velocity # 
-        self.water.area.flow_velocity = campo.uniform(self.water.area.lower, self.water.area.upper) 
-        self.water.area.flow_velocity.is_dynamic = True
+        self.water.area.flow_velocity = ugrid_rasterize (map_nc, 5, 1, 'mesh2d_ucmag') 
+        self.water.area.flow_velocity.is_dynamic = False
         # Property Water Depth # 
         self.water.area.water_depth = campo.uniform(self.water.area.lower, self.water.area.upper) 
         self.water.area.water_depth.is_dynamic = True
@@ -83,7 +83,8 @@ class FishEnvironment(pcrfw.DynamicModel):
         self.fish.salmon.coordy = (self.fish.salmon.get_space_domain(self.timestep)).ycoord 
         self.fish.salmon.coordx.is_dynamic = True # mobility is dynamic haha 
         self.fish.salmon.coordy.is_dynamic = True 
-
+        # Add local water depth to fish 
+        # campo.field_values_to_agent () --> non existent ? check
 
         self.timestep = 0   
         self.fishenv.write() # write the lue dataset
@@ -96,27 +97,23 @@ class FishEnvironment(pcrfw.DynamicModel):
         # self.water.area.flow_velocity = ugrid_rasterize (map_nc, 5, self.timestep, 'mesh2d_ucmag')# properties can have the following shape: np.ndarray, or property.Property, or int or float. 
          #['mesh2d_ucmag'].values
         #self.water.area.water_depth = (ugrid_rasterize (map_nc, 5, self.timestep, 'water_depth')).values
-        
-        
-        # self.water.area.water_depth = (ugrid_rasterize (map_nc, 5, self.timestep)).values 
+        self.water.area.deep_enough = self.water.area.water_depth > 0.2
 
-        # add from the surroundings function
-        # self.fishenv.bulls.add_property_set ('surroundings', 'age_related_buffer'+str(self.timestep) +'.tif' ) 
-        # call surroundings function and add to bulls phenomenon: likelihood of travel 
         # move agents over field: 
         salmon_coords = self.fish.salmon.get_space_domain(self.timestep)
 
-        salmon_coords.xcoord = salmon_coords.xcoord +1 
-        salmon_coords.ycoord = salmon_coords.ycoord + 1
+        # salmon_coords.xcoord = salmon_coords.xcoord + 100
+        # salmon_coords.ycoord = salmon_coords.ycoord + 100
         # bouncing off of the border 
-        # salmon_coords.xcoord = campo.where (self.water.area.flow_velocity > 0, self.fish.salmon.coordx + 1, self.fish.salmon.coordx - 1) 
-        # salmon_coords.ycoord = campo.where (self.water.area.flow_velocity > 0, self.fish.salmon.coordy + 1, self.fish.salmon.coordy - 1)
+        
+        salmon_coords.xcoord = campo.where (self.fish.salmon.coordx < 179400, self.fish.salmon.coordx + 100, self.fish.salmon.coordx - 10) 
+        salmon_coords.ycoord = campo.where (self.fish.salmon.coordy < 330700 , self.fish.salmon.coordy + 100, self.fish.salmon.coordy - 10)
         
         self.fish.salmon.coordy = salmon_coords.ycoord
         self.fish.salmon.coordx = salmon_coords.xcoord 
 
 
-        self.fish.salmon.set_space_domain(salmon_coords, self.timestep)
+        self.fish.salmon.set_space_domain(salmon_coords, self.timestep) # this does not work!! space domain is set!!
 
         self.fishenv.write(self.currentTimeStep())
         end = datetime.datetime.now() - start
@@ -129,13 +126,4 @@ if __name__ == "__main__":
     dynFrw = pcrfw.DynamicFramework(myModel, timesteps)
     dynFrw.run()
 
-#%% postprocessing
-nr_salmon = 33 # len ()
-xcoords_salmon = np.zeros((timesteps, nr_salmon))
-ycoords_salmon = np.zeros ((timesteps, nr_salmon))
-xcoordinaten = myModel.fish.salmon.coordx
-for t in range (timesteps):
 
-    xcoords_salmon [t]= myModel.fish.salmon.coordx.values.aslist()
-    ycoords_salmon [t] = myModel.fish.salmon.coordy
-import matplotlib as plt
