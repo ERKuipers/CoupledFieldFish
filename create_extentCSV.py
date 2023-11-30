@@ -6,14 +6,9 @@ scratch_dir = "C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/maas_
 os.chdir(scratch_dir) 
 map_nc = "C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/maas_data/new_fm_map.nc" #netcdf 
 resolution = 5
-xr_ds = ugrid_rasterize(map_nc, resolution, 20, 'flow_velocity')
-# xr_ds.reset_index()
-# long_ds = xr_ds['mesh2d_ucmag'].unstack('x')
-xr_df = xr_ds.to_dataframe() #.reset_index(inplace=True) -->  leads to nonetype 
-print (xr_df.columns)
-pd_xy = xr_df.reset_index()[['x','y', 'mesh2d_ucmag']]
+reshaped = ugrid_rasterize(map_nc, resolution, 20, 'mesh2d_ucmag')
 
-reshaped =pd_xy.pivot(index = ['x'], columns = ['y'], values='mesh2d_ucmag') 
+
 print (reshaped.head()) # works but everything is NaN, should check it 
 #(xr_ds['mesh2d_ucmag'].values).reshape()
 # make pandas dataframe and get min and max values

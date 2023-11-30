@@ -8,8 +8,8 @@ import xarray as xr
 import xugrid as xu
 from xugrid_func import ugrid_rasterize
 import campo
-
-
+import numpy as np 
+from matplotlib import pyplot as plt
 #
 scratch_dir = "C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/scratch"
 os.chdir(scratch_dir)
@@ -78,9 +78,9 @@ class FishEnvironment(pcrfw.DynamicModel):
         # Property Age
         self.fish.salmon.age = campo.uniform(self.fish.salmon.lower, self.fish.salmon.upper)
         self.fish.salmon.age.is_dynamic = True # salmon age changes over time and salmon items are mobile 
-        # Properties Coordinates        
+        # # Properties Coordinates        
         self.fish.salmon.coordx = (self.fish.salmon.get_space_domain(self.timestep)).xcoord 
-        self.fish.salmon.coordy = (self.fish.salmon.get_space_domain(self.timestep)).xcoord 
+        self.fish.salmon.coordy = (self.fish.salmon.get_space_domain(self.timestep)).ycoord 
         self.fish.salmon.coordx.is_dynamic = True # mobility is dynamic haha 
         self.fish.salmon.coordy.is_dynamic = True 
 
@@ -92,12 +92,12 @@ class FishEnvironment(pcrfw.DynamicModel):
 
     def dynamic(self):
         start = datetime.datetime.now()
-        
-        ds_u = (ugrid_rasterize (map_nc, 5, self.timestep, 'flow_velocity')) # properties can have the following shape: np.ndarray, or property.Property, or int or float. 
-        self.water.area.flow_velocity = ds_u['mesh2d_ucmag'].values
-        #self.water.area.water_depth = (ugrid_rasterize (map_nc, 5, self.timestep, 'water_depth')).values
         self.timestep += 1 
-        print (self.timestep)
+        # self.water.area.flow_velocity = ugrid_rasterize (map_nc, 5, self.timestep, 'mesh2d_ucmag')# properties can have the following shape: np.ndarray, or property.Property, or int or float. 
+         #['mesh2d_ucmag'].values
+        #self.water.area.water_depth = (ugrid_rasterize (map_nc, 5, self.timestep, 'water_depth')).values
+        
+        
         # self.water.area.water_depth = (ugrid_rasterize (map_nc, 5, self.timestep)).values 
 
         # add from the surroundings function
@@ -105,12 +105,17 @@ class FishEnvironment(pcrfw.DynamicModel):
         # call surroundings function and add to bulls phenomenon: likelihood of travel 
         # move agents over field: 
         salmon_coords = self.fish.salmon.get_space_domain(self.timestep)
+
+        salmon_coords.xcoord = salmon_coords.xcoord +1 
+        salmon_coords.ycoord = salmon_coords.ycoord + 1
+        # bouncing off of the border 
+        # salmon_coords.xcoord = campo.where (self.water.area.flow_velocity > 0, self.fish.salmon.coordx + 1, self.fish.salmon.coordx - 1) 
+        # salmon_coords.ycoord = campo.where (self.water.area.flow_velocity > 0, self.fish.salmon.coordy + 1, self.fish.salmon.coordy - 1)
+        
         self.fish.salmon.coordy = salmon_coords.ycoord
         self.fish.salmon.coordx = salmon_coords.xcoord 
-        # bouncing off of the border 
-        salmon_coords.xcoord = campo.where (self.water.area.flow_velocity > 0, self.fish.salmon.coordx + 1, self.fish.salmon.coordx - 1) 
-        salmon_coords.ycoord = campo.where (self.water.area.flow_velocity > 0, self.fish.salmon.coordy + 1, self.fish.salmon.coordy - 1)
-        
+
+
         self.fish.salmon.set_space_domain(salmon_coords, self.timestep)
 
         self.fishenv.write(self.currentTimeStep())
@@ -119,14 +124,18 @@ class FishEnvironment(pcrfw.DynamicModel):
 
 
 if __name__ == "__main__":
-    timesteps = 12
+    timesteps = 10
     myModel = FishEnvironment()
     dynFrw = pcrfw.DynamicFramework(myModel, timesteps)
     dynFrw.run()
 
+#%% postprocessing
+nr_salmon = 33 # len ()
+xcoords_salmon = np.zeros((timesteps, nr_salmon))
+ycoords_salmon = np.zeros ((timesteps, nr_salmon))
+xcoordinaten = myModel.fish.salmon.coordx
+for t in range (timesteps):
 
-
-
-
-
-
+    xcoords_salmon [t]= myModel.fish.salmon.coordx.values.aslist()
+    ycoords_salmon [t] = myModel.fish.salmon.coordy
+import matplotlib as plt

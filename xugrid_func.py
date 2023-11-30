@@ -28,9 +28,17 @@ def ugrid_rasterize (ugrid_filelocation, resolution, timestep, var):
     var_dict = {}
     var_dict ['flow_velocity']= {'mesh2d_ucmag'}
     var_dict ['water_depth'] = {'mesh2d_waterdepth'}
-    xr_raster = uds[var_dict[var]].isel(time=timestep).ugrid.rasterize(resolution) # ugrid is de accessor hier. 
-    xr_rasterized = xr_raster.rio.write_crs ("epsg:28992")
+    xr_raster = uds[str(var)].isel(time=timestep).ugrid.rasterize(resolution) # ugrid is de accessor hier. 
+    xr_ds = xr_raster.rio.write_crs ("epsg:28992")
     
-    return xr_rasterized
+    # xr_ds.reset_index()
+    # long_ds = xr_ds['mesh2d_ucmag'].unstack('x')
+    xr_df = xr_ds.to_dataframe() #.reset_index(inplace=True) -->  leads to nonetype 
+    # print (xr_df.columns)
+    pd_xy = xr_df.reset_index()[['x','y', str(var)]]
+
+    reshaped = pd_xy.pivot(index = ['x'], columns = ['y'], values=str(var))
+    raster_array = reshaped.to_numpy()
+    return raster_array
 
 
