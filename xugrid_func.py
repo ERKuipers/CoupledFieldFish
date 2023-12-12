@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
 #%% 
+import pandas as pd
+from matplotlib import pyplot as plt
+
 import xarray as xr
-import xugrid as xu # CIRCULAR DEPENDENCY of the package with geopandas and xarray
+import xugrid as xu 
 import pandas as pd
 import numpy as np
 import os
-import matplotlib.pyplot as plt
-
-#%% rasterize function
+# rasterize function
 def ugrid_rasterize (ugrid_filelocation, resolution, timestep, var):
     '''
     Parameters
@@ -28,13 +29,9 @@ def ugrid_rasterize (ugrid_filelocation, resolution, timestep, var):
     var_dict = {}
     var_dict ['flow_velocity']= {'mesh2d_ucmag'}
     var_dict ['water_depth'] = {'mesh2d_waterdepth'}
-    xr_raster = uds[str(var)].isel(time=timestep).ugrid.rasterize(resolution) # ugrid is de accessor hier. 
+    xr_raster = uds[str(var)].isel(time=timestep).ugrid.rasterize(resolution) 
     xr_ds = xr_raster.rio.write_crs ("epsg:28992")
-    
-    # xr_ds.reset_index()
-    # long_ds = xr_ds['mesh2d_ucmag'].unstack('x')
-    xr_df = xr_ds.to_dataframe() #.reset_index(inplace=True) -->  leads to nonetype 
-    # print (xr_df.columns)
+    xr_df = xr_ds.to_dataframe() 
     pd_xy = xr_df.reset_index()[['x','y', str(var)]]
 
     reshaped = pd_xy.pivot(index = ['x'], columns = ['y'], values=str(var))
@@ -42,3 +39,29 @@ def ugrid_rasterize (ugrid_filelocation, resolution, timestep, var):
     return raster_array
 
 
+def partial_reraster (ugrid_filelocation, resolution, timestep, var,xmin,xmax,ymin,ymax):
+    ds = xr.open_dataset(ugrid_filelocation)
+    uds = (xu.UgridDataset(ds))
+    # print(uds.data_vars)
+    var_dict = {}
+    var_dict ['flow_velocity']= {'mesh2d_ucmag'}
+    var_dict ['water_depth'] = {'mesh2d_waterdepth'}
+    x_coords = np.arange(xmin,xmax, resolution) # 5 becomes the cell length of the raster.
+    y_coords = np.arange(ymin,ymax,resolution)
+
+    da_clone = xr.DataArray(data=np.ones((len(y_coords), len(x_coords))), 
+                            coords={'x':x_coords,
+                                    'y':y_coords},
+                            dims=['y', 'x']) 
+
+
+
+    xr_raster = uds[str(var)].isel(time=timestep).ugrid.rasterize_like(da_clone)
+
+    xr_ds = xr_raster.rio.write_crs ("epsg:28992")
+    xr_df = xr_ds.to_dataframe() 
+    pd_xy = xr_df.reset_index()[['x','y', str(var)]]
+
+    reshaped = pd_xy.pivot(index = ['x'], columns = ['y'], values=str(var))
+    raster_array = reshaped.to_numpy()
+    return raster_array
