@@ -10,6 +10,8 @@ __pycache__/
 *.lue
 *.pdf 
 *.csv
+*.tif 
+*.gpkg
 
 # Distribution / packaging
 .Python

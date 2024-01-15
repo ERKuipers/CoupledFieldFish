@@ -12,29 +12,28 @@ dataset = ldm.open_dataset('fish_environment.lue')
 
 xcoords = np.zeros ((11,33) )
 ycoords = np.zeros ((11,33))
+df = campo.dataframe.select(dataset.water, property_names=['flow_velocity']) # space type = static_diff_field but should be dynamic field 
+# no space type distinction, however proper shape
+spawn_df = campo.dataframe.select(dataset.water, property_names=['spawning_grounds'])
+depth_df = campo.dataframe.select(dataset.water, property_names=['water_depth'])
+for t in range(1, 6):
+    coords = campo.dataframe.coordinates(dataset, "fish", "barbel", t)
+     # let op : neemt alleen laatste key mee!!!!! als df 
 
-for t in range(1, 3):
-    coords = campo.dataframe.coordinates(dataset, "fish", "salmon", t)
-    flowvelocityframe = campo.dataframe.select(dataset.water, property_names=['flow_velocity', 'water_depth'])
-    
     dataframe_age = campo.dataframe.select (dataset.fish, property_names = ['age'])
     # dataframex = campo.dataframe.select(dataset.fish, property_names=['coordx'])
     # dataframey = campo.dataframe.select(dataset.fish, property_names=['coordy'])
     tmp_df = campo.to_df(dataframe_age, t)
     campo.mobile_points_to_gpkg(coords, tmp_df, f"tmp_{t}.gpkg", 'EPSG:28992')
 
-    campo.to_geotiff(flowvelocityframe, 'flow.tif', '28992', directory )
 
-    #%% plotting and other dataformats
-
-campo.to_csv(dataframex, "salmon.csv") # creates a csv for every variable so there will be a 'bulls_age', as well as a bulls_x 
-campo.to_csv(dataframey, "salmon.csv")
-xcoords_csv = pandas.read_csv("salmon_coordx.csv") # so this csv is created in the previous step 
-ycoords_csv = pandas.read_csv("salmon_coordy.csv")
-plt.figure (1)
-for time,x in xcoords_csv.iterrows(): 
-     for  time,y in ycoords_csv.iterrows():
-         plt.scatter (x,y)
-
-# xcoords_csv.plot(legend=False, xlabel="time steps (1 step = 1 day)", ylabel="xcoords")
+    raster = df["water"]["area"]['flow_velocity'][0][t - 1]
+    spawnraster = spawn_df["water"]["area"]['spawning_grounds'][0][t - 1]
+    depthraster = depth_df["water"]["area"]['water_depth'][0][t - 1]
+    #filename = pathlib.Path(directory, f"fdata_{t}.tiff")
+    # again shape is lost !! no extra acis 
+    campo.to_geotiff(raster, f'flow_{t}.tif', 'EPSG:28992')
+    campo.to_geotiff(spawnraster, f'spawn_{t}.tif', 'EPSG:28992')
+    campo.to_geotiff(depthraster, f'depth_{t}.tif', 'EPSG:28992')
+    
 

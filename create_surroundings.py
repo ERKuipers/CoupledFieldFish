@@ -8,9 +8,9 @@ def surroundings (self, var):
         - occurrance of preferred environmental variables 
         --> likelihood distribution as a window (not buffer since we have raster values and thus clipping as shp is inefficient) around an agent '''
         # make a buffer around the fishes location as a shp file
-    windowsize = self.fishenv.bulls.location.age * 10 #randomly couple it to an age 
-    lon = self.bulls.char._space_domain.xcoord
-    lat = self.bulls.char._space_domain.ycoord
+    windowsize = self.fishenv.fish.barbel.age * 10 #randomly couple it to an age 
+    lon = self.fish.barbel._space_domain.xcoord
+    lat = self.fish.barbel._space_domain.ycoord
     # only make them move if the current location is not in the range of their preference
     # find the nearest indices in the xarray dataset # var = variable of interest to test to and to make likelihood raster from 
     lon_idx = abs(var['x'] - lon).argmin().item()
