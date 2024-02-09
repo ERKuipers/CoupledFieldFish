@@ -12,6 +12,8 @@ __pycache__/
 *.csv
 *.tif 
 *.gpkg
+*.tiff
+*.gpkg
 
 # Distribution / packaging
 .Python

@@ -39,9 +39,6 @@ def raster_values_to_feature(point_pset, field_pset, field_prop):
       iy = math.floor((point_y - minY) / cellsize) # need to find a solution for when point_x/y = minX/Y
       
       # reshaped = field_prop.values() #.reshape ((nr_rows, nr_cols))
-    
-      #print (field_prop.values().values.shape)
-      # print (field_prop.values()[fidx][ix,iy])
       point_value[fidx] = field_prop.values()[fidx][ix,iy] # because rows, columns = x , y 
       # maybe built try except block to try the value for the different fields and skip it if the index is not available 
     tmp_prop.values()[pidx] = point_value # could be list if there are more fields at that location

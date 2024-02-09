@@ -10,7 +10,7 @@ os.chdir(directory)
 
 dataset = ldm.open_dataset('fish_environment.lue')
 
-xcoords = np.zeros ((11,33) )
+xcoords = np.zeros ((11,33))
 ycoords = np.zeros ((11,33))
 df = campo.dataframe.select(dataset.water, property_names=['flow_velocity']) # space type = static_diff_field but should be dynamic field 
 # no space type distinction, however proper shape
@@ -24,7 +24,7 @@ for t in range(1, 6):
     # dataframex = campo.dataframe.select(dataset.fish, property_names=['coordx'])
     # dataframey = campo.dataframe.select(dataset.fish, property_names=['coordy'])
     tmp_df = campo.to_df(dataframe_age, t)
-    campo.mobile_points_to_gpkg(coords, tmp_df, f"tmp_{t}.gpkg", 'EPSG:28992')
+    campo.mobile_points_to_gpkg(coords, tmp_df, f"barbel_{t}.gpkg", 'EPSG:28992')
 
 
     raster = df["water"]["area"]['flow_velocity'][0][t - 1]

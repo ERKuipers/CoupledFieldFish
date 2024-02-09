@@ -2,6 +2,7 @@
 # importing campo #
 import datetime
 import os
+import sys
 import pcraster as pcr
 import pcraster.framework as pcrfw
 import xarray as xr
@@ -12,8 +13,11 @@ import campo
 import numpy as np 
 from matplotlib import pyplot as plt
 from lookup import raster_values_to_feature 
-from lifecycle_pref import spawning
+from lifecycle_pref import spawning, spawning_true
+from coordinatelist_fieldloc import coordinatelist_to_fieldloc
 import math
+import random
+import unittest
 #
 scratch_dir = "C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/CoupledFieldFish/working/"
 os.chdir(scratch_dir)
@@ -51,6 +55,8 @@ class FishEnvironment(pcrfw.DynamicModel):
         self.resolution = 10
         self.nrrows = int(math.fabs (self.xmax - self.xmin) / self.resolution)
         self.nrcols = int(math.fabs (self.ymax - self.ymin) / self.resolution)
+
+        
         with open('extent.csv', 'w') as content:
             content.write(f"{self.xmin}, {self.ymin}, {self.xmax}, {self.ymax}, {self.nrrows}, {self.nrcols}\n")
 
@@ -65,6 +71,8 @@ class FishEnvironment(pcrfw.DynamicModel):
         self.fish.set_epsg(28992)
         # Property Set barbel 
         self.fish.add_property_set ('barbel', loc_CSV ) # the water area always has the same spatial as well as temporal extent (it always exists)
+        self.nrbarbels = len (self.fish.barbel.space_domain.xcoord)
+        
         self.fish.barbel.is_mobile = True
         self.fish.barbel.lower = 0 # days
         self.fish.barbel.upper = 20*365 #amount of half hours set to be the maximum age 
@@ -79,6 +87,13 @@ class FishEnvironment(pcrfw.DynamicModel):
         self.fish.barbel.flowvelocity.is_dynamic = True 
         self.fish.barbel.waterdepth.is_dynamic = True 
         
+
+        #change location based on spawning grounds: 
+        self.fish.barbel.closest_spawngroundsX = 0 # so this is not updated 
+        self.fish.barbel.closest_spawngroundsY = 0
+        self.fish.barbel.closest_spawngroundsX.is_dynamic = True
+        self.fish.barbel.closest_spawngroundsY.is_dynamic = True
+        
         ####################
         # Phenomenon Water #
         ####################
@@ -86,7 +101,7 @@ class FishEnvironment(pcrfw.DynamicModel):
         self.water.set_epsg(28992)
         # Property Set Area # 
         self.water.add_property_set ('area', 'extent.csv') # the water area always has the same spatial as well as temporal extent (it always exists)
-        print ('added the field as a domain') 
+        print ('added the field as a domain')  
         self.water.area.lower = 0 # days
         self.water.area.upper = 1
         #  Property Flow velocity # 
@@ -101,15 +116,9 @@ class FishEnvironment(pcrfw.DynamicModel):
         #self.water.area.spawning_grounds = campo.slope (self.water.area.water_depth)
         self.water.area.water_depth.is_dynamic = True
         #_spatial_operation_two_arguments (self.water.area.water_depth, self.water.area.flow_velocity, spawning, pcraster.Boolean)
-        self.water.area.deep_enough = self.water.area.water_depth >= 0.30 
-        self.water.area.not_drowning = self.water.area.water_depth <= 40 # should be 0.4
-        self.water.area.not_drifting = self.water.area.flow_velocity <= 50 # should be 0.5
-        self.water.area.rheophilic = self.water.area.flow_velocity >=0.35 
-        self.water.area.spawning_true = self.water.area.deep_enough*self.water.area.not_drowning*self.water.area.not_drifting*self.water.area.rheophilic
-        self.water.area.true = 1
-        self.water.area.false = 0
-        self.water.area.spawning_grounds = campo.where (self.water.area.spawning_true, self.water.area.true, self.water.area.false)
+        self.water.area.spawning_grounds = spawning_true (self, self.water.area.water_depth, self.water.area.flow_velocity)
         self.water.area.spawning_grounds.is_dynamic = True
+        
         print (self.currentTimeStep())
         
         self.fishenv.write() # write the lue dataset
@@ -119,29 +128,25 @@ class FishEnvironment(pcrfw.DynamicModel):
     def dynamic(self):
         start = datetime.datetime.now()
         self.fish.barbel.age = self.fish.barbel.age + self.currentTimeStep()  
-        self.fish.barbel.waterdepth = raster_values_to_feature (self.fish.barbel, self.water.area, self.water.area.water_depth)
-        self.fish.barbel.flowvelocity = raster_values_to_feature (self.fish.barbel, self.water.area, self.water.area.flow_velocity)
+        # self.fish.barbel.waterdepth = raster_values_to_feature (self.fish.barbel, self.water.area, self.water.area.water_depth)
+        # self.fish.barbel.flowvelocity = raster_values_to_feature (self.fish.barbel, self.water.area, self.water.area.flow_velocity)
+        spawngroundsX, spawngroundsY = coordinatelist_to_fieldloc (self, self.water.area.spawning_true, self.fish.barbel, self.resolution, self.xmin, self.ymin, self.nrbarbels) 
+         # is no problem, however, becomes a problem when self.fish.barbel changes or something? because its dynamic and becomes a property
+        # print (spawngroundsX) # displacement to the different coordinates seems to work, but writing to the different dimension does not
+        # self.fish.barbel.closest_spawngroundsX = np.array (spawngroundsX) # add the extra dimension to make sure its incorporated (seems unnecessary to be fair)
+        # self.fish.barbel.closest_spawngroundsY = np.array (spawngroundsY) 
+        # check after this: 
 
         # move agents over field: 
         barbel_coords = self.fish.barbel.get_space_domain(self.currentTimeStep()*48)
-        barbel_coords.xcoord = self.fish.barbel.closest_spawngroundsX
-        barbel_coords.ycoord = self.fish.barbel.closest_spawngroundsY
-        # when moved towards dry part: swimming against the stream
-        # barbel_coords.xcoord = campo.where (self.fish.barbel.waterdepth > 0, barbel_coords.xcoord + self.fish.barbel.flow_velocity, barbel_coords.xcoord - self.fish.barbel.flow_velocity)
-        # barbel_coords.ycoord = barbel_coords.ycoord + 100*self.currentTimeStep ()
-         
-        self.fish.barbel.set_space_domain(barbel_coords, (self.currentTimeStep ()*48)) # this does not work!! space domain is set!!
-        
-        # self.water.area.flow_velocity = np.zeros ((1,self.nrrows, self.nrcols))
-        self.water.area.deep_enough = self.water.area.water_depth >= 0.3 #.30 
-        self.water.area.not_drowning = self.water.area.water_depth <= 40 #0.4
-        self.water.area.not_drifting = self.water.area.flow_velocity <= 50 #0.5
-        self.water.area.rheophilic = self.water.area.flow_velocity >=0.35 #.35 
-        self.water.area.spawning_true =  self.water.area.deep_enough*self.water.area.not_drowning*self.water.area.not_drifting*self.water.area.rheophilic
-        
-        self.water.area.spawning_grounds = campo.where (self.water.area.spawning_true, self.water.area.true, self.water.area.false)
+        barbel_coords.xcoord = spawngroundsX# self.fish.barbel.closest_spawngroundsX.values().values
+        barbel_coords.ycoord = spawngroundsY# self.fish.barbel.closest_spawngroundsY.values().values
+        print (spawngroundsX)
+        print (barbel_coords.xcoord)
+        # print (barbel_coords)
+        self.fish.barbel.set_space_domain(barbel_coords, (self.currentTimeStep ()*48)) 
 
-
+        self.water.area.spawning_grounds = spawning_true (self, self.water.area.water_depth, self.water.area.flow_velocity)
         depth_array = partial_reraster (map_nc, self.resolution, (self.currentTimeStep()*48), 'mesh2d_waterdepth', self.xmin, self.xmax, self.ymin, self.ymax)
         self.water.area.water_depth = depth_array [np.newaxis,:,:]
         flow_array = partial_reraster (map_nc, self.resolution, (self.currentTimeStep()*48), 'mesh2d_ucmag', self.xmin, self.xmax, self.ymin, self.ymax)
@@ -156,8 +161,3 @@ if __name__ == "__main__":
     myModel = FishEnvironment()
     dynFrw = pcrfw.DynamicFramework(myModel, timesteps)
     dynFrw.run()
-    flowv = myModel.water.area.flow_velocity
-    array = flowv.values()[0]
-
-    myModel.fish.barbel.get_space_domain () 
-

@@ -8,7 +8,7 @@ def surroundings (self, var):
         - occurrance of preferred environmental variables 
         --> likelihood distribution as a window (not buffer since we have raster values and thus clipping as shp is inefficient) around an agent '''
         # make a buffer around the fishes location as a shp file
-    windowsize = self.fishenv.fish.barbel.age * 10 #randomly couple it to an age 
+    windowsize = self.fishenv.fish.barbel.age * 10 #couple it to age but could be something else 
     lon = self.fish.barbel._space_domain.xcoord
     lat = self.fish.barbel._space_domain.ycoord
     # only make them move if the current location is not in the range of their preference
