@@ -41,7 +41,6 @@ class FishEnvironment(pcrfw.DynamicModel):
     def initial(self):
         init_start = datetime.datetime.now()
         
-
         self.fishenv = campo.Campo(seed = 1)
         # create real time settings for lue
         date = datetime.date(2000, 1, 2)
@@ -131,11 +130,6 @@ class FishEnvironment(pcrfw.DynamicModel):
         # self.fish.barbel.waterdepth = raster_values_to_feature (self.fish.barbel, self.water.area, self.water.area.water_depth)
         # self.fish.barbel.flowvelocity = raster_values_to_feature (self.fish.barbel, self.water.area, self.water.area.flow_velocity)
         spawngroundsX, spawngroundsY = coordinatelist_to_fieldloc (self, self.water.area.spawning_true, self.fish.barbel, self.resolution, self.xmin, self.ymin, self.nrbarbels) 
-         # is no problem, however, becomes a problem when self.fish.barbel changes or something? because its dynamic and becomes a property
-        # print (spawngroundsX) # displacement to the different coordinates seems to work, but writing to the different dimension does not
-        # self.fish.barbel.closest_spawngroundsX = np.array (spawngroundsX) # add the extra dimension to make sure its incorporated (seems unnecessary to be fair)
-        # self.fish.barbel.closest_spawngroundsY = np.array (spawngroundsY) 
-        # check after this: 
 
         # move agents over field: 
         barbel_coords = self.fish.barbel.get_space_domain(self.currentTimeStep()*48)

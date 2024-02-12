@@ -1,7 +1,14 @@
 import numpy as np
 import random 
 def coordinatelist_to_fieldloc (self, fieldcondition_prop, point_propset, resolution, xmin, ymin, nragents):
-    ''' return lists of coordinates with the same length as the number of agents in a point propertyset (sueful wehn you want to make them move there) 
+    
+    '''
+    - fieldcondition_prop = a property that is a field and contains true values for places where an agent may move to   
+    - point_propset = the property set that has the move (=point agents)
+    - xmin = minimal extent of the field 
+    - ymin = maximum extent of the field 
+    - nragents = the number of point agents 
+    return lists of coordinates with the same length as the number of agents in a point propertyset (sueful wehn you want to make them move there) 
     '''
 
     spawncoords = np.argwhere (fieldcondition_prop.values()[0]) #coordinates of the spawning grounds in [x,y]
