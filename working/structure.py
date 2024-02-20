@@ -3,6 +3,8 @@
 import datetime
 import os
 import sys
+sys.path.append ("C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/CoupledFieldFish/pre_processing/")
+sys.path.append ("C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish\CoupledFieldFish")
 import pcraster as pcr
 import pcraster.framework as pcrfw
 import xarray as xr
