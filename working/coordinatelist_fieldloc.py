@@ -12,9 +12,8 @@ def coordinatelist_to_fieldloc (self, fieldcondition_prop, point_propset, resolu
     '''
 
     spawncoords = np.argwhere (fieldcondition_prop.values()[0]) #coordinates of the spawning grounds in [x,y]
-    
     spawncoords_list = [tuple(row) for row in spawncoords]
-    # find the amount of barbel
+    
     subsetsize = nragents # nr of barbel 
     random_newindex = random.sample (spawncoords_list, subsetsize)
     xindex, yindex = zip(*random_newindex)

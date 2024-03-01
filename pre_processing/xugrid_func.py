@@ -40,13 +40,24 @@ def ugrid_rasterize (ugrid_filelocation, resolution, timestep, var):
 
 
 def partial_reraster (ugrid_filelocation, resolution, timestep, var,xmin,xmax,ymin,ymax):
+    '''
+    Parameters
+    ----------
+    ugrid_filelocation : location of .nc file 
+    resolution : resolution to rasterize variable in 
+    timestep 
+    var = variable to get
+
+    Returns
+    -------
+    xr_raster : xarray data array with spatial extent for that array 
+
+    '''
     ds = xr.open_dataset(ugrid_filelocation)
     uds = (xu.UgridDataset(ds))
     # print(uds.data_vars)
-    var_dict = {}
-    var_dict ['flow_velocity']= {'mesh2d_ucmag'}
-    var_dict ['water_depth'] = {'mesh2d_waterdepth'}
-    x_coords = np.arange(xmin,xmax, resolution) # 5 becomes the cell length of the raster.
+
+    x_coords = np.arange(xmin,xmax, resolution)     # resolution becomes the cell length of the raster.
     y_coords = np.arange(ymin,ymax,resolution)
 
     da_clone = xr.DataArray(data=np.ones((len(y_coords), len(x_coords))), 
@@ -62,6 +73,7 @@ def partial_reraster (ugrid_filelocation, resolution, timestep, var,xmin,xmax,ym
     xr_df = xr_ds.to_dataframe() 
     pd_xy = xr_df.reset_index()[['x','y', str(var)]]
 
-    reshaped = pd_xy.pivot(index = ['x'], columns = ['y'], values=str(var))
+    reshaped = pd_xy.pivot(index = ['x'], columns = ['y'], values=str(var)) # pivot to make x y match row, columns 
     raster_array = reshaped.to_numpy()
     return raster_array
+
