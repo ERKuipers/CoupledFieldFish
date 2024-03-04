@@ -28,14 +28,22 @@ import unittest
 #########
 # model #
 #########
-#%%
-class FishEnvironment(pcrfw.DynamicModel):
 
-    def __init__(self):
+class FishEnvironment(pcrfw.DynamicModel, ):
+
+    def __init__(self, input_dir, output_dir, ut_array, dt_array, spatial_resolution, xmin, ymin, nrbarbels):
         pcrfw.DynamicModel.__init__(self)
         # Framework requires a clone
         # set a dummy clone
         pcr.setclone(10, 20, 10, 0, 0)
+        self.input_dir = input_dir 
+        self.output_dir = output_dir 
+        self.ut_array = ut_array 
+        self.dt_array = dt_array
+        self.resolution = spatial_resolution
+        self.xmin = xmin
+        self.ymin = ymin 
+        self.nrbarbels = nrbarbels
 
     def initial(self):
         init_start = datetime.datetime.now()
@@ -51,9 +59,35 @@ class FishEnvironment(pcrfw.DynamicModel):
         
 
         # create the output lue data set
-        self.fishenv.create_dataset(output_d / "fish_environment.lue")
+        self.fishenv.create_dataset(self.output_dir / "fish_environment.lue")
         self.fishenv.set_time(start, unit, stepsize, self.nrTimeSteps())
 
+        ####################
+        # Phenomenon Water #
+        ####################
+        self.water = self.fishenv.add_phenomenon ('water') # could we possibly reduce the first step of this? 
+        self.water.set_epsg(28992)
+        # Property Set Area # 
+        self.water.add_property_set ('area', self.input_dir / 'extent.csv') # the water area always has the same spatial as well as temporal extent (it always exists)
+        print ('added the field as a domain')  
+        self.water.area.lower = 0 # days
+        self.water.area.upper = 1
+        #  Property Flow velocity # 
+        self.water.area.flow_velocity = self.ut_array[:,self.currentTimeStep(), :, :]
+        self.water.area.flow_velocity.is_dynamic = True
+        # Property Water Depth # 
+    
+        self.water.area.water_depth = self.dt_array[:,self.currentTimeStep(), :, :]
+        # spawning_grounds = spawning(self.water.area.water_depth, self.water.area.flow_velocity)
+        #self.water.area.spawning_grounds = campo.slope (self.water.area.water_depth)
+        self.water.area.water_depth.is_dynamic = True
+        #_spatial_operation_two_arguments (self.water.area.water_depth, self.water.area.flow_velocity, spawning, pcraster.Boolean)
+        self.water.area.spawning_grounds = spawning_true (self, self.water.area.water_depth, self.water.area.flow_velocity)
+        self.water.area.spawning_grounds.is_dynamic = True
+        # self.water.area.swimmable = swimmable (self,self.water.area.water_depth, self.water.area.flow_velocity)
+        # self.water.area.connected_swimmable=connected_swimmable (self.water.area.swimmable) # does not work because method object is not callable , even though: its a field property .... also doesn ot work with other field props
+        # self.water.area.connected_swaimmable.is_dynamic = True
+        # self.water.area.swimmable.is_dynamic = True 
 
         ###################
         # Phenomenon barbel #
@@ -61,9 +95,8 @@ class FishEnvironment(pcrfw.DynamicModel):
         self.barbel = self.fishenv.add_phenomenon ('barbel') # could we possibly reduce the first step of this? 
         self.barbel.set_epsg(28992)
         # Property Set barbel 
-        self.barbel.add_property_set ('adults', loc_CSV ) # the water area always has the same spatial as well as temporal extent (it always exists)
+        self.barbel.add_property_set ('adults', self.input_dir / 'Fish.csv' ) # the water area always has the same spatial as well as temporal extent (it always exists)
         
-        self.nrbarbels = len (self.barbel.adults.space_domain.xcoord)
         self.barbel.adults.is_mobile = True
      
         # Property Age
@@ -76,7 +109,6 @@ class FishEnvironment(pcrfw.DynamicModel):
         self.barbel.adults.flowvelocity = 0 # raster_values_to_feature (self.barbel.barbel, self.water.area, self.water.area.flow_velocity)
         self.barbel.adults.flowvelocity.is_dynamic = True 
         self.barbel.adults.waterdepth.is_dynamic = True 
-        
 
         #change location based on spawning grounds: 
         self.barbel.adults.closest_spawngroundsX = 0  
@@ -85,34 +117,6 @@ class FishEnvironment(pcrfw.DynamicModel):
         self.barbel.adults.closest_spawngroundsY.is_dynamic = True
         
 
-        
-
-        ####################
-        # Phenomenon Water #
-        ####################
-        self.water = self.fishenv.add_phenomenon ('water') # could we possibly reduce the first step of this? 
-        self.water.set_epsg(28992)
-        # Property Set Area # 
-        self.water.add_property_set ('area', 'extent.csv') # the water area always has the same spatial as well as temporal extent (it always exists)
-        print ('added the field as a domain')  
-        self.water.area.lower = 0 # days
-        self.water.area.upper = 1
-        #  Property Flow velocity # 
-        self.water.area.flow_velocity = self.flow_array[:,self.currentTimeStep(), :, :]
-        self.water.area.flow_velocity.is_dynamic = True
-        # Property Water Depth # 
-    
-        self.water.area.water_depth = self.flow_array[:,self.currentTimeStep(), :, :]
-        # spawning_grounds = spawning(self.water.area.water_depth, self.water.area.flow_velocity)
-        #self.water.area.spawning_grounds = campo.slope (self.water.area.water_depth)
-        self.water.area.water_depth.is_dynamic = True
-        #_spatial_operation_two_arguments (self.water.area.water_depth, self.water.area.flow_velocity, spawning, pcraster.Boolean)
-        self.water.area.spawning_grounds = spawning_true (self, self.water.area.water_depth, self.water.area.flow_velocity)
-        self.water.area.spawning_grounds.is_dynamic = True
-        self.water.area.swimmable = swimmable (self,self.water.area.water_depth, self.water.area.flow_velocity)
-        self.water.area.connected_swimmable=connected_swimmable (self.water.area.swimmable) # does not work because method object is not callable , even though: its a field property .... also doesn ot work with other field props
-        self.water.area.connected_swaimmable.is_dynamic = True
-        self.water.area.swimmable.is_dynamic = True 
         
         self.fishenv.write() # write the lue dataset
         end = datetime.datetime.now() - init_start # print the run duration
@@ -124,29 +128,23 @@ class FishEnvironment(pcrfw.DynamicModel):
         # self.barbel.adults.waterdepth = raster_values_to_feature (self.barbel.adults, self.water.area, self.water.area.water_depth)
         # self.barbel.adults.flowvelocity = raster_values_to_feature (self.barbel.adults, self.water.area, self.water.area.flow_velocity)
         self.water.area.spawning_grounds = spawning_true (self, self.water.area.water_depth, self.water.area.flow_velocity)
-        self.water.area.swimmable = swimmable (self, self.water.area.water_depth, self.water.area.flow_velocity)
-        self.water.area.connected_swimmable=connected_swimmable (self.water.area.swimmable)
+        # self.water.area.swimmable = swimmable (self, self.water.area.water_depth, self.water.area.flow_velocity)
+        # self.water.area.connected_swimmable=connected_swimmable (self.water.area.swimmable)
         spawngroundsX, spawngroundsY = coordinatelist_to_fieldloc (self, self.water.area.spawning_true, self.barbel.adults, self.resolution, self.xmin, self.ymin, self.nrbarbels) 
 
         # move agents over field: 
-        barbel_coords = self.barbel.adults.get_space_domain(self.currentTimeStep()*48)
+        barbel_coords = self.barbel.adults.get_space_domain(self.currentTimeStep())
         barbel_coords.xcoord = spawngroundsX
         barbel_coords.ycoord = spawngroundsY
 
-        self.barbel.adults.set_space_domain(barbel_coords, (self.currentTimeStep ()*48)) 
+        self.barbel.adults.set_space_domain(barbel_coords, (self.currentTimeStep ())) 
 
         self.water.area.spawning_grounds = spawning_true (self, self.water.area.water_depth, self.water.area.flow_velocity)
-        depth_array = partial_reraster (map_nc, self.resolution, (self.currentTimeStep()*48), 'mesh2d_waterdepth', self.xmin, self.xmax, self.ymin, self.ymax)
-        self.water.area.water_depth = depth_array [np.newaxis,:,:]
-        flow_array = partial_reraster (map_nc, self.resolution, (self.currentTimeStep()*48), 'mesh2d_ucmag', self.xmin, self.xmax, self.ymin, self.ymax)
-        self.water.area.flow_velocity = flow_array [np.newaxis,:,:]
+        
+        self.water.area.water_depth = self.dt_array [:,self.currentTimeStep(), :,:]
+        self.water.area.flow_velocity = self.ut_array [:,self.currentTimeStep(), :,:]
         
         self.fishenv.write(self.currentTimeStep())
         end = datetime.datetime.now() - start
         print(f'ts:  {end}  write')
 
-if __name__ == "__main__":
-    timesteps = 5
-    myModel = FishEnvironment()
-    dynFrw = pcrfw.DynamicFramework(myModel, timesteps)
-    dynFrw.run()

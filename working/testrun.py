@@ -1,11 +1,18 @@
 import model_config as cfg
 from barbel_model import FishEnvironment 
-from generation_extent_nr import CommonMeuse, Fish 
-connect(cfg.loc_CSV, cfg.xmax, cfg.ymax, cfg.ymin, cfg.xmin, cfg.map_nc)
+from phenomena import CommonMeuse, Fish 
+import pcraster as pcr
+import pcraster.framework as pcrfw
 
-depth_array = CommonMeuse.
+commonBarbel = Fish(cfg.nr_barbel, cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.input_d)
+commonMeuse = CommonMeuse (cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.spatial_resolution, cfg.map_nc, cfg.timesteps, cfg.temporal_resolution, cfg.data_T_res, cfg.input_d)
+commonMeuse.extent()
+commonBarbel.extent()
+commonMeuse.time_domain()
+u = commonMeuse.flow_velocity_array ()
+d = commonMeuse.waterdepth_array ()
+
 if __name__ == "__main__":
-    timesteps = 5
-    myModel = FishEnvironment()
-    dynFrw = pcrfw.DynamicFramework(myModel, timesteps)
+    myModel = FishEnvironment(cfg.input_d, cfg.output_d, u, d, cfg.spatial_resolution, cfg.xmin, cfg.ymin, cfg.nr_barbel)
+    dynFrw = pcrfw.DynamicFramework(myModel, cfg.timesteps)
     dynFrw.run()

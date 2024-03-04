@@ -9,3 +9,13 @@ creating a csv file which is unallowed for in the dynamic (and creates a new pro
 if i want to aggregate certain values however in a propertyset (composed of a number of fields (same nr as agents) that are
 THE WINDOWSize, i need to define the destination. 
 --> going for clump on the whole field for every timestep, then checking if the fish is in one of the connected parts of river. 
+
+# 04/03/2023: 
+make sure the coordinatelist to fieldloc does not require self.xmin and self.ymin + nrbarbels + resolution anymore
+does the nr of barbels cahnge when they die? 
+
+make phenomena.CommonMeuse.extent also suitable for multiple field agents 
+try 
+except 
+or if : array, vs else: integer 
+or just iterate whatsoever .... whats less expensive? 

@@ -19,7 +19,7 @@ loc_CSV =input_d / 'barbel_coords.csv'
 fish_env = output_d / 'fish_environment.lue'
 dataset = ldm.open_dataset(f"{fish_env}")
 
-xcoords = np.zeros ((11,33))
+xcoords = np.zeros ((11,33)) # zo wat lelijk 
 ycoords = np.zeros ((11,33))
 df = campo.dataframe.select(dataset.water, property_names=['flow_velocity']) # space type = static_diff_field but should be dynamic field 
 # no space type distinction, however proper shape
