@@ -15,11 +15,11 @@ def lifecycle_pref (age):
         u_pref = [0.05, 0.5]
     return d_pref, u_pref 
 
-def swimmable (self, waterdepth, flow_velocity):
+def swimmable (self,new_prop_name, waterdepth, flow_velocity):
     '''
     field waterdepth and field_flow velocity should have the same size
     ''' 
-    swimmable = _new_property_from_property (waterdepth, 0.0)
+    swimmable = _new_property_from_property ('swim', waterdepth, 0.0)
     #connected_swimmable = _new_property_from_property (waterdepth, 0.0)
     self.water.area.deep_enough = waterdepth >= 0.5 #.30 
     self.water.area.not_drowning = waterdepth <= 100 # should be 0.4
@@ -29,24 +29,17 @@ def swimmable (self, waterdepth, flow_velocity):
     self.water.area.true = 1
     self.water.area.false = 0
     swimmable = campo.where (self.water.area.spawning_true, self.water.area.true, self.water.area.false)
-    return swimmable
-
-def connected_swimmable (swimmable):
-        # make this a values thing to return it to 
-    connected_swimmable = _spatial_operation_one_argument(swimmable, pcr.clump, pcr.Scalar)
+    connected_swimmable = _spatial_operation_one_argument(new_prop_name, swimmable, pcr.clump, pcr.Boolean)
     return connected_swimmable
     
-
-
-
 
 def spawning (self, waterdepth, flow_velocity):
     ''' check if spawning is possible, returns True for spawning possible, False when not possible
     - must be old enough 
     - must be near other barbel --> check another time 
     - must be at spawning suitable grounds ''' 
-    spawning_possible = _new_property_from_property (waterdepth, 0.0)
-    spawning = _new_property_from_property (waterdepth, 0.0)
+    spawning_possible = campo._new_property_from_property ('spawning_possible', waterdepth, 0.0)
+    spawning = campo._new_property_from_property ('spawning', waterdepth, 0.0)
 
     spawning_possible = pcr.pcrand(flow_velocity <0.5,(pcr.pcrand(flow_velocity >0.35,pcr.pcrand(waterdepth > 0.30, waterdepth <0.40))))
     spawning_flow = flow_velocity >0.35 and flow_velocity <0.5
@@ -65,9 +58,9 @@ def windowsize (age, flow_velocity):
 
 def spawning_true (self, water_depth, flow_velocity ):
     self.water.area.deep_enough = water_depth >= 0 #.30 
-    self.water.area.not_drowning = water_depth <= 1 # should be 0.4
-    self.water.area.not_drifting = flow_velocity <= 1 # should be 0.5
-    self.water.area.rheophilic = flow_velocity >= 0 #.35 
+    self.water.area.not_drowning = water_depth <= 1 #0.4
+    self.water.area.not_drifting = flow_velocity <= 1# 0.5
+    self.water.area.rheophilic = flow_velocity >= 0 # 0.35 
     self.water.area.spawning_true = self.water.area.deep_enough*self.water.area.not_drowning*self.water.area.not_drifting*self.water.area.rheophilic
     self.water.area.true = 1
     self.water.area.false = 0

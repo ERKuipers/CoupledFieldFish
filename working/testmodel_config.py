@@ -1,4 +1,5 @@
 from pathlib import Path 
+''' configuration to test the model over a small part of the common meuse over 1000 (x) by 2000 (y) metres '''
 
 # directory hierarchies 
 working = Path.cwd()
@@ -11,8 +12,8 @@ post_processing = up_dir / 'post_processing'
 map_nc = input_d / 'maas_data'/'new_fm_map.nc'
 loc_CSV = input_d / 'barbel_coords.csv'
 
-xmin,ymin =  173000, 322000, # 179000, 329000  #
-xmax,ymax =  193400, 353000 #180000, 331000 #
+xmin,ymin =  179000, 329000  
+xmax,ymax =  180000, 331000 #
 spatial_resolution = 10     # metres ,  on the flexible mesh 
 
 # temporal resolution # 

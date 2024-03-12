@@ -19,3 +19,7 @@ try
 except 
 or if : array, vs else: integer 
 or just iterate whatsoever .... whats less expensive? 
+
+#05/03/2024 
+make spatial extent in model linked to csv file name of the input processor 
+

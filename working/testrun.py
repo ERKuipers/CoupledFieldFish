@@ -1,4 +1,4 @@
-import model_config as cfg
+import testmodel_config as cfg
 from barbel_model import FishEnvironment 
 from phenomena import CommonMeuse, Fish 
 import pcraster as pcr
@@ -9,8 +9,9 @@ commonMeuse = CommonMeuse (cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.spatial_r
 commonMeuse.extent()
 commonBarbel.extent()
 commonMeuse.time_domain()
-u = commonMeuse.flow_velocity_array ()
-d = commonMeuse.waterdepth_array ()
+
+u = commonMeuse.flow_velocity_array()
+d = commonMeuse.waterdepth_array()
 
 if __name__ == "__main__":
     myModel = FishEnvironment(cfg.input_d, cfg.output_d, u, d, cfg.spatial_resolution, cfg.xmin, cfg.ymin, cfg.nr_barbel)

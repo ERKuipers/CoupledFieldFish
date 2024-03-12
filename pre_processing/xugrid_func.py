@@ -30,6 +30,7 @@ def ugrid_rasterize (ugrid_filelocation, resolution, timestep, var):
     var_dict ['flow_velocity']= {'mesh2d_ucmag'}
     var_dict ['water_depth'] = {'mesh2d_waterdepth'}
     xr_raster = uds[str(var)].isel(time=timestep).ugrid.rasterize(resolution) 
+    
     xr_ds = xr_raster.rio.write_crs ("epsg:28992")
     xr_df = xr_ds.to_dataframe() 
     pd_xy = xr_df.reset_index()[['x','y', str(var)]]
@@ -60,20 +61,22 @@ def partial_reraster (ugrid_filelocation, resolution, timestep, var,xmin,xmax,ym
     x_coords = np.arange(xmin,xmax, resolution)     # resolution becomes the cell length of the raster.
     y_coords = np.arange(ymin,ymax,resolution)
 
-    da_clone = xr.DataArray(data=np.ones((len(y_coords), len(x_coords))), 
+    da_clone = xr.DataArray(data=np.ones((len(x_coords), len(y_coords))), 
                             coords={'x':x_coords,
                                     'y':y_coords},
-                            dims=['y', 'x']) 
+                            dims=['x', 'y']) 
 
 
 
     xr_raster = uds[str(var)].isel(time=timestep).ugrid.rasterize_like(da_clone)
-
-    xr_ds = xr_raster.rio.write_crs ("epsg:28992")
+    xr_ds = xr_raster.rio.write_crs ("epsg:28992")   # xr Data array
     xr_df = xr_ds.to_dataframe() 
     pd_xy = xr_df.reset_index()[['x','y', str(var)]]
-
-    reshaped = pd_xy.pivot(index = ['x'], columns = ['y'], values=str(var)) # pivot to make x y match row, columns 
+    # make from long raster format with columns x,y and variable the indx x, columns y and the variable the value
+    reshaped = pd_xy.pivot(index = ['x'], columns = ['y'], values=str(var))  
     raster_array = reshaped.to_numpy()
+    # print (raster_array.shape)
+    # raster_mirroredx = np.rot90(raster_array, k=1)
+    # raster_mirrored = np.flip(raster_array, axis=0)
     return raster_array
 

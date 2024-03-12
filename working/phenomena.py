@@ -13,7 +13,6 @@ class CommonMeuse():
         deltaT_data = timestep for the data (e.g. Common Meuse rastered data covers 30 minutes).
         Unit is whatever, as long as deltaT_mod and deltaT_data have the same unit
         timesteps = nr of steps to iterate the model 
-        
         '''
         self.xmin = xmin
         self.ymin = ymin
@@ -46,12 +45,28 @@ class CommonMeuse():
         - column 5: number of rows or pixels/gridcells on the x axis 
         - column 6: number of columns or pixels / gridcells on the y axis 
         row, column herein equals x, y 
+        from campo docs: 
+
+                        x1[idx] = item[0]
+                y1[idx] = item[1]
+                x2[idx] = item[2]
+                y2[idx] = item[3]
+                xdiscr[idx] = item[4]
+                ydiscr[idx] = item[5]
+            self.p1.xcoord = x1
+            self.p1.ycoord = y1
+
+            self.p2.xcoord = x2
+            self.p2.ycoord = y2
+
+            self.row_discr = xdiscr
+            self.col_discr = ydiscr
         '''
         
         self.nrrows = int(math.fabs (self.xmax - self.xmin) / self.resolution)
         self.nrcols = int(math.fabs (self.ymax - self.ymin) / self.resolution)
         with open(self.input_dir / 'CommonMeuse.csv', 'w') as content:
-            content.write(f"{self.xmin}, {self.ymin}, {self.xmax}, {self.ymax}, {self.nrrows}, {self.nrcols}\n")
+            content.write(f"{self.xmin}, {self.ymin}, {self.xmax}, {self.ymax},  {self.nrrows}, {self.nrcols}\n") 
             
 
     def flow_velocity_array (self): 
@@ -61,11 +76,12 @@ class CommonMeuse():
         - second dimension: time, 
         - third: x axis and 
         - fourth: y axis
+        Row = y, Column = x, as defined in extent
         Herein data can be called on the basis of the model's timestep (second dimension), does not require configuration to the data timestep 
         the array is +1 larger than the nr of timesteps to account for the initial timestep = 0 , 
         over which the nr of timesteps is started to count in the dynamic section with t = 1 
         '''
-        u_array = np.zeros ((self.timesteps+1, self.nrrows, self.nrcols)) 
+        u_array = np.zeros ((self.timesteps+1, self.nrrows, self.nrcols )) 
         t_mod = 0 
         for t in self.t_data:
             u_array [t_mod,:,:] = partial_reraster (self.map_nc, self.resolution, t, 'mesh2d_ucmag', self.xmin, self.xmax, self.ymin, self.ymax)
@@ -75,7 +91,7 @@ class CommonMeuse():
     
     def waterdepth_array (self): 
         '''See docstring about flow velocity array '''
-        
+
         d_array = np.zeros ((self.timesteps+1, self.nrrows, self.nrcols))
         t_mod = 0
         for t in self.t_data : 
@@ -84,7 +100,7 @@ class CommonMeuse():
         d_add_dim = d_array [np.newaxis, :, :, :]
         return d_add_dim
 
-# generating the extent 
+
 class Fish (): 
     def __init__ (self, nr_fish, xmin, ymin, xmax, ymax, input_dir): 
         self.nr_fish = nr_fish 
@@ -95,7 +111,7 @@ class Fish ():
         self.input_dir = input_dir
 
     def extent (self): 
-        ''' Generates a csv with randomly placed coordinates in line with the number of fish as specified by the configuration'''
+        ''' Generates a csv with randomly placed coordinates within the bounding box in line with the number of fish as specified by the configuration'''
         self.x = [random.uniform(self.xmin, self.xmax) for _ in range(self.nr_fish)]
         self.y = [random.uniform(self.ymin, self.ymax) for _ in range(self.nr_fish)]
         with open(self.input_dir / 'Fish.csv', 'w', newline='') as csvfile:
@@ -103,4 +119,3 @@ class Fish ():
             for x, y in zip(self.x, self.y):
                 writer.writerow([f"{x}", f"{y}"])
 
-# generate a number of fish with random coordinates within the bounding box 
