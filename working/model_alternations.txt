@@ -10,6 +10,7 @@ if i want to aggregate certain values however in a propertyset (composed of a nu
 THE WINDOWSize, i need to define the destination. 
 --> going for clump on the whole field for every timestep, then checking if the fish is in one of the connected parts of river. 
 
+moving window: is nog niet mogelijk, maar misschien wel in .lue ooit 
 # 04/03/2023: 
 make sure the coordinatelist to fieldloc does not require self.xmin and self.ymin + nrbarbels + resolution anymore
 does the nr of barbels cahnge when they die? 
@@ -23,3 +24,16 @@ or just iterate whatsoever .... whats less expensive?
 #05/03/2024 
 make spatial extent in model linked to csv file name of the input processor 
 
+#14/03/2024
+the clump function works!! 
+- now check if the fish is currently in a connected area  !!! 
+- by cutting it out??? 
+- b
+
+gdal functie: : 
+cel indices van de buren kunnen uitlezen 
+
+
+
+window functie: 
+wat zou dan de resampling / gridsizes etc wat voor operaties 

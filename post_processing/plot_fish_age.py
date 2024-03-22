@@ -31,22 +31,24 @@ df = campo.dataframe.select(dataset.water, property_names=['flow_velocity']) # s
 # no space type distinction, however proper shape
 spawn_df = campo.dataframe.select(dataset.water, property_names=['spawning_grounds'])
 depth_df = campo.dataframe.select(dataset.water, property_names=['water_depth'])
+swim_df = campo.dataframe.select(dataset.water, property_names=['swimmable'])
 dataframe_age = campo.dataframe.select (dataset.barbel, property_names = ['lifestatus'])
 for t in range(1, 6):
     coords = campo.dataframe.coordinates(dataset, "barbel", "adults", t)
      # let op : neemt alleen laatste key mee!!!!! als df 
 
-    # dataframex = campo.dataframe.select(dataset.fish, property_names=['coordx'])
-    # dataframey = campo.dataframe.select(dataset.fish, property_names=['coordy'])
-    tmp_df = campo.to_df(dataframe_age, t)
+
+    tmp_df = campo.to_df(dataframe_age, t)  # is only for dataframe before timestep 0 
     campo.mobile_points_to_gpkg(coords, tmp_df,(f"barbel_{t}.gpkg"), 'EPSG:28992')
 
 
     raster = df["water"]["area"]['flow_velocity'][0][t - 1]
     spawnraster = spawn_df["water"]["area"]['spawning_grounds'][0][t - 1]
     depthraster = depth_df["water"]["area"]['water_depth'][0][t - 1]
+    swimraster = swim_df['water']["area"]['swimmable'][0][t-1]
     #filename = pathlib.Path(directory, f"fdata_{t}.tiff")
-    # again shape is lost !! no extra acis 
+    
+    campo.to_geotiff(swimraster, (f"swim_{t}.tif"), 'EPSG:28992')
     campo.to_geotiff(raster, (f"flow_{t}.tif"), 'EPSG:28992')
     campo.to_geotiff(spawnraster, f'spawn_{t}.tif', 'EPSG:28992')
     campo.to_geotiff(depthraster, f'depth_{t}.tif', 'EPSG:28992')

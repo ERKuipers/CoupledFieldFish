@@ -18,8 +18,7 @@ import numpy as np
 from matplotlib import pyplot as plt
 from lookup import raster_values_to_feature 
 from lifecycle_pref import spawning, spawning_true, swimmable
-from coordinatelist_fieldloc import coordinatelist_to_fieldloc
-from op_fields import _spatial_operation_one_argument, _new_property_from_property, _set_current_clone
+from moving_to_coordinates import coordinatelist_to_fieldloc, connected_move
 import math
 import random
 import unittest
@@ -116,31 +115,28 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         
         self.fishenv.write() # write the lue dataset
         end = datetime.datetime.now() - init_start # print the run duration
-        print(f'init: {end}')
+        print(f'init: {end}, timestep: {self.currentTimeStep()}')
 
     def dynamic(self):
         start = datetime.datetime.now()
 
         # self.barbel.adults.waterdepth = raster_values_to_feature (self.barbel.adults, self.water.area, self.water.area.water_depth)
         # self.barbel.adults.flowvelocity = raster_values_to_feature (self.barbel.adults, self.water.area, self.water.area.flow_velocity)
+
         self.water.area.spawning_grounds = spawning_true (self, self.water.area.water_depth, self.water.area.flow_velocity)
+        
         self.water.area.swimmable = swimmable (self, 'swimmable', self.water.area.water_depth, self.water.area.flow_velocity)
         
-        spawngroundsX, spawngroundsY = coordinatelist_to_fieldloc (self, self.water.area.spawning_true, self.barbel.adults, self.resolution, self.xmin, self.ymin, self.nrbarbels) 
-
+        movingX, movingY = connected_move (self, self.water.area.swimmable, self.barbel.adults, self.water.area, self.resolution, self.xmin, self.ymin, self.nrbarbels) 
         # move agents over field: 
         barbel_coords = self.barbel.adults.get_space_domain(self.currentTimeStep())
-        barbel_coords.xcoord = spawngroundsX
-        barbel_coords.ycoord = spawngroundsY
-
+        barbel_coords.xcoord = movingX
+        barbel_coords.ycoord = movingY
         self.barbel.adults.set_space_domain(barbel_coords, (self.currentTimeStep ())) 
-
-        self.water.area.spawning_grounds = spawning_true (self, self.water.area.water_depth, self.water.area.flow_velocity)
-        
         self.water.area.water_depth = self.dt_array [:,self.currentTimeStep(), :,:]
         self.water.area.flow_velocity = self.ut_array [:,self.currentTimeStep(), :,:]
         
         self.fishenv.write(self.currentTimeStep())
         end = datetime.datetime.now() - start
-        print(f'ts:  {end}  write')
+        print(f'ts:  {end}  write, timestep: {self.currentTimeStep()}')
 

@@ -1,6 +1,7 @@
 import campo
 import pcraster as pcr 
-from op_fields import _new_property_from_property, _spatial_operation_one_argument
+from op_fields import new_property_from_property, spatial_operation_one_argument
+
 
 def lifecycle_pref (age): 
     ''' determines preferences based on age '''
@@ -19,7 +20,7 @@ def swimmable (self,new_prop_name, waterdepth, flow_velocity):
     '''
     field waterdepth and field_flow velocity should have the same size
     ''' 
-    swimmable = _new_property_from_property ('swim', waterdepth, 0.0)
+    swimmable = new_property_from_property ('swim', waterdepth, 0.0)
     #connected_swimmable = _new_property_from_property (waterdepth, 0.0)
     self.water.area.deep_enough = waterdepth >= 0.5 #.30 
     self.water.area.not_drowning = waterdepth <= 100 # should be 0.4
@@ -29,7 +30,9 @@ def swimmable (self,new_prop_name, waterdepth, flow_velocity):
     self.water.area.true = 1
     self.water.area.false = 0
     swimmable = campo.where (self.water.area.spawning_true, self.water.area.true, self.water.area.false)
-    connected_swimmable = _spatial_operation_one_argument(new_prop_name, swimmable, pcr.clump, pcr.Boolean)
+    connected_swimmable = spatial_operation_one_argument(new_prop_name, swimmable, pcr.clump, pcr.Boolean)
+    #boolean_clump = campo.where (connected_swimmable == 1, self.water.area.false,self.water.area.true)
+    #unique_clump = spatial_operation_one_argument (new_prop_name, boolean_clump, pcr.uniqueid, pcr.Boolean)
     return connected_swimmable
     
 

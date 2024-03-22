@@ -5,7 +5,7 @@ from campo.property import Property
 from concurrent import futures
 import copy
 
-def _new_property_from_property(new_prop_name, area_property, multiplier):
+def new_property_from_property(new_prop_name, area_property, multiplier):
 
     # make empty property
 
@@ -28,7 +28,7 @@ def _new_property_from_property(new_prop_name, area_property, multiplier):
     new_prop.values().values = copy.deepcopy(area_property.values().values)
     return new_prop
 
-def _set_current_clone(area_property, item_idx):
+def set_current_clone(area_property, item_idx):
 
     west = area_property.space_domain.p1.xcoord[item_idx]
     north = area_property.space_domain.p1.ycoord[item_idx]
@@ -40,14 +40,14 @@ def _set_current_clone(area_property, item_idx):
 
     pcr.setclone(rows, cols, cellsize, west, north)
 
-def _spatial_operation_one_argument(new_prop_name, area_property, spatial_operation, pcr_type):
+def spatial_operation_one_argument(new_prop_name, area_property, spatial_operation, pcr_type):
 
     # generate a property to store the result
-    result_prop = _new_property_from_property(new_prop_name, area_property, 0.0)
+    result_prop = new_property_from_property(new_prop_name, area_property, 0.0)
 
     for item_idx, item in enumerate(area_property.values()):
 
-        _set_current_clone(area_property, item_idx)
+        set_current_clone(area_property, item_idx)
 
         arg_raster = pcr.numpy2pcr(pcr_type, item, np.nan)
 
@@ -55,5 +55,5 @@ def _spatial_operation_one_argument(new_prop_name, area_property, spatial_operat
         result_item = pcr.pcr2numpy(result_raster, np.nan)
 
         result_prop.values()[item_idx] = result_item # have to assign zero because item assignment apparently does not work since result_prop is a method
-        print(result_prop.values)  # needs to be an array or a property? 
+          # needs to be an array or a property? 
     return result_prop

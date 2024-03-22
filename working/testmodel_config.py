@@ -12,6 +12,10 @@ post_processing = up_dir / 'post_processing'
 map_nc = input_d / 'maas_data'/'new_fm_map.nc'
 loc_CSV = input_d / 'barbel_coords.csv'
 
+# the following should result in: 
+# nrrows, xcells : 100 
+# nrcols, ycells: 200
+# equal sizing of y and x resolution 
 xmin,ymin =  179000, 329000  
 xmax,ymax =  180000, 331000 #
 spatial_resolution = 10     # metres ,  on the flexible mesh 

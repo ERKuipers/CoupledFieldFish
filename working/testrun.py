@@ -8,8 +8,8 @@ commonBarbel = Fish(cfg.nr_barbel, cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.i
 commonMeuse = CommonMeuse (cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.spatial_resolution, cfg.map_nc, cfg.timesteps, cfg.temporal_resolution, cfg.data_T_res, cfg.input_d)
 commonMeuse.extent()
 commonBarbel.extent()
-commonMeuse.time_domain()
 
+commonMeuse.time_domain()
 u = commonMeuse.flow_velocity_array()
 d = commonMeuse.waterdepth_array()
 

@@ -59,12 +59,12 @@ class CommonMeuse():
             self.p2.xcoord = x2
             self.p2.ycoord = y2
 
-            self.row_discr = xdiscr
+            self.row_discr = xdiscr , but no should be nr of y!!!!!!!! 
             self.col_discr = ydiscr
         '''
         
-        self.nrrows = int(math.fabs (self.xmax - self.xmin) / self.resolution)
-        self.nrcols = int(math.fabs (self.ymax - self.ymin) / self.resolution)
+        self.nrcols = int(math.fabs (self.xmax - self.xmin) / self.resolution)
+        self.nrrows = int(math.fabs (self.ymax - self.ymin) / self.resolution)
         with open(self.input_dir / 'CommonMeuse.csv', 'w') as content:
             content.write(f"{self.xmin}, {self.ymin}, {self.xmax}, {self.ymax},  {self.nrrows}, {self.nrcols}\n") 
             
@@ -101,7 +101,7 @@ class CommonMeuse():
         return d_add_dim
 
 
-class Fish (): 
+class Fish(): 
     def __init__ (self, nr_fish, xmin, ymin, xmax, ymax, input_dir): 
         self.nr_fish = nr_fish 
         self.xmin = xmin 

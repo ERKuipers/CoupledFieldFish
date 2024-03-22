@@ -73,10 +73,8 @@ def partial_reraster (ugrid_filelocation, resolution, timestep, var,xmin,xmax,ym
     xr_df = xr_ds.to_dataframe() 
     pd_xy = xr_df.reset_index()[['x','y', str(var)]]
     # make from long raster format with columns x,y and variable the indx x, columns y and the variable the value
-    reshaped = pd_xy.pivot(index = ['x'], columns = ['y'], values=str(var))  
-    raster_array = reshaped.to_numpy()
-    # print (raster_array.shape)
-    # raster_mirroredx = np.rot90(raster_array, k=1)
-    # raster_mirrored = np.flip(raster_array, axis=0)
+    reshaped = pd_xy.pivot(index = ['y'], columns = ['x'], values=str(var))  
+    raster_array_rev = reshaped.to_numpy()
+    raster_array = np.flip (raster_array_rev, axis = 0)
     return raster_array
 
