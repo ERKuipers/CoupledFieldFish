@@ -9,20 +9,12 @@ sys.path.append ("C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/ca
 sys.path.append ("C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/CoupledFieldFish")
 import pcraster as pcr
 import pcraster.framework as pcrfw
-import xarray as xr
-import xugrid as xu
-from xugrid_func import ugrid_rasterize
-from xugrid_func import partial_reraster
 import campo
 import numpy as np 
 from matplotlib import pyplot as plt
-from lookup import raster_values_to_feature 
-from lifecycle_pref import spawning, spawning_true, swimmable
+ 
+from lifecycle_pref import spawning, spawning_true, swimmable, connected_swimmable
 from moving_to_coordinates import coordinatelist_to_fieldloc, connected_move
-import math
-import random
-import unittest
-
 
 #########
 # model #
@@ -71,23 +63,17 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         
         self.barbel.adults.is_mobile = True
      
-        # Property Age
+        # Property describing their lifestatus 
         self.barbel.adults.lifestatus = 0
         self.barbel.adults.lifestatus.is_dynamic = True # barbel age changes over time and barbel items are mobile  
-        
-        
+        self.barbel.adults.spawning_area = 0 # describing the total available spawning area for each individual barbel
+        self.barbel.adults.spawning_area.is_dynamic = True 
         # Local properties set to 0 at first
         self.barbel.adults.waterdepth = 0 # raster_values_to_feature (self.barbel.barbel, self.water.area, self.water.area.water_depth)
         self.barbel.adults.flowvelocity = 0 # raster_values_to_feature (self.barbel.barbel, self.water.area, self.water.area.flow_velocity)
         self.barbel.adults.flowvelocity.is_dynamic = True 
         self.barbel.adults.waterdepth.is_dynamic = True 
-
-        #change location based on spawning grounds: 
-        self.barbel.adults.closest_spawngroundsX = 0  
-        self.barbel.adults.closest_spawngroundsY = 0
-        self.barbel.adults.closest_spawngroundsX.is_dynamic = True
-        self.barbel.adults.closest_spawngroundsY.is_dynamic = True
-
+        
         ####################
         # Phenomenon Water #
         ####################
@@ -104,37 +90,42 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         # Property Water Depth # 
     
         self.water.area.water_depth = self.dt_array[:,self.currentTimeStep(), :, :]
+        # To position the barbels in a channel, we look one step ahead
+        # self.water.area.water_depth_t1 = self.dt_array [:, (self.currentTimeStep()+2), :, :]
+        # self.water.area.flow_velocity_t1 = self.ut_array[:,(self.currentTimeStep()+2), :, :]
         # spawning_grounds = spawning(self.water.area.water_depth, self.water.area.flow_velocity)
         #self.water.area.spawning_grounds = campo.slope (self.water.area.water_depth)
         self.water.area.water_depth.is_dynamic = True
         #_spatial_operation_two_arguments (self.water.area.water_depth, self.water.area.flow_velocity, spawning, pcraster.Boolean)
         self.water.area.spawning_grounds = spawning_true (self, self.water.area.water_depth, self.water.area.flow_velocity)
         self.water.area.spawning_grounds.is_dynamic = True
-        self.water.area.swimmable = swimmable (self,'swimmable', self.water.area.water_depth, self.water.area.flow_velocity)
+        self.water.area.connected_swimmable = connected_swimmable (self, self.water.area.water_depth, self.water.area.flow_velocity, 'connected_swimmable')
+        self.water.area.connected_swimmable.is_dynamic = True 
+        self.water.area.swimmable = swimmable (self, self.water.area.water_depth, self.water.area.flow_velocity, 'swimmable')
         self.water.area.swimmable.is_dynamic = True 
-        
+
         self.fishenv.write() # write the lue dataset
         end = datetime.datetime.now() - init_start # print the run duration
         print(f'init: {end}, timestep: {self.currentTimeStep()}')
 
     def dynamic(self):
         start = datetime.datetime.now()
-
-        # self.barbel.adults.waterdepth = raster_values_to_feature (self.barbel.adults, self.water.area, self.water.area.water_depth)
-        # self.barbel.adults.flowvelocity = raster_values_to_feature (self.barbel.adults, self.water.area, self.water.area.flow_velocity)
-
+        # first setting environmental variables, then positioning the barbels 
+        self.water.area.water_depth = self.dt_array [:,self.currentTimeStep(), :,:]
+        self.water.area.flow_velocity = self.ut_array [:,self.currentTimeStep(), :,:]
         self.water.area.spawning_grounds = spawning_true (self, self.water.area.water_depth, self.water.area.flow_velocity)
-        
-        self.water.area.swimmable = swimmable (self, 'swimmable', self.water.area.water_depth, self.water.area.flow_velocity)
-        
-        movingX, movingY = connected_move (self, self.water.area.swimmable, self.barbel.adults, self.water.area, self.resolution, self.xmin, self.ymin, self.nrbarbels) 
+        self.water.area.swimmable = swimmable (self, self.water.area.water_depth, self.water.area.flow_velocity, 'swimmable')
+
+        # move them within their connected swimmable areas
+        self.water.area.connected_swimmable = connected_swimmable (self, self.water.area.water_depth, self.water.area.flow_velocity, 'connected_swimmable')
+        movingX, movingY, spawning_area = connected_move (self, self.water.area.connected_swimmable, self.water.area.swimmable, self.water.area.spawning_grounds, self.barbel.adults, self.water.area, self.resolution, self.xmin, self.ymin, self.nrbarbels, self.currentTimeStep()) 
         # move agents over field: 
         barbel_coords = self.barbel.adults.get_space_domain(self.currentTimeStep())
         barbel_coords.xcoord = movingX
         barbel_coords.ycoord = movingY
         self.barbel.adults.set_space_domain(barbel_coords, (self.currentTimeStep ())) 
-        self.water.area.water_depth = self.dt_array [:,self.currentTimeStep(), :,:]
-        self.water.area.flow_velocity = self.ut_array [:,self.currentTimeStep(), :,:]
+        self.barbel.adults.spawning_area = spawning_area
+
         
         self.fishenv.write(self.currentTimeStep())
         end = datetime.datetime.now() - start

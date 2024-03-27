@@ -1,6 +1,7 @@
 import campo
 import pcraster as pcr 
 from op_fields import new_property_from_property, spatial_operation_one_argument
+import numpy as np 
 
 
 def lifecycle_pref (age): 
@@ -16,25 +17,32 @@ def lifecycle_pref (age):
         u_pref = [0.05, 0.5]
     return d_pref, u_pref 
 
-def swimmable (self,new_prop_name, waterdepth, flow_velocity):
+def swimmable (self, waterdepth, flow_velocity, prop_name):
     '''
     field waterdepth and field_flow velocity should have the same size
     ''' 
-    swimmable = new_property_from_property ('swim', waterdepth, 0.0)
+    swimmable = new_property_from_property (prop_name, waterdepth, 0.0)
     #connected_swimmable = _new_property_from_property (waterdepth, 0.0)
-    self.water.area.deep_enough = waterdepth >= 0.5 #.30 
-    self.water.area.not_drowning = waterdepth <= 100 # should be 0.4
+    self.water.area.deep_enough = waterdepth >= 0.1 #.30 
+    self.water.area.not_drowning = waterdepth <= 1 # should be 0.4
     self.water.area.not_drifting = flow_velocity <= 0.5# should be 0.5
     self.water.area.rheophilic = flow_velocity >= 0.05 #.35 
     self.water.area.spawning_true = self.water.area.deep_enough*self.water.area.not_drowning*self.water.area.not_drifting*self.water.area.rheophilic
     self.water.area.true = 1
     self.water.area.false = 0
     swimmable = campo.where (self.water.area.spawning_true, self.water.area.true, self.water.area.false)
-    connected_swimmable = spatial_operation_one_argument(new_prop_name, swimmable, pcr.clump, pcr.Boolean)
+    return swimmable 
+
+def campo_clump (self,boolean_fieldprop, prop_name):
+    connected_boolean = spatial_operation_one_argument(prop_name, boolean_fieldprop, pcr.clump, pcr.Boolean)
     #boolean_clump = campo.where (connected_swimmable == 1, self.water.area.false,self.water.area.true)
     #unique_clump = spatial_operation_one_argument (new_prop_name, boolean_clump, pcr.uniqueid, pcr.Boolean)
+    return connected_boolean
+
+def connected_swimmable (self, waterdepth, flow_velocity, prop_name):
+    swimmable_boolean = swimmable (self, waterdepth, flow_velocity, 'swimmable_boolean')
+    connected_swimmable = campo_clump (self, swimmable_boolean, prop_name)
     return connected_swimmable
-    
 
 def spawning (self, waterdepth, flow_velocity):
     ''' check if spawning is possible, returns True for spawning possible, False when not possible
@@ -58,15 +66,11 @@ def windowsize (age, flow_velocity):
     return windowsize 
 
 
-
 def spawning_true (self, water_depth, flow_velocity ):
-    self.water.area.deep_enough = water_depth >= 0 #.30 
-    self.water.area.not_drowning = water_depth <= 1 #0.4
-    self.water.area.not_drifting = flow_velocity <= 1# 0.5
-    self.water.area.rheophilic = flow_velocity >= 0 # 0.35 
-    self.water.area.spawning_true = self.water.area.deep_enough*self.water.area.not_drowning*self.water.area.not_drifting*self.water.area.rheophilic
-    self.water.area.true = 1
-    self.water.area.false = 0
-    self.water.area.spawning_grounds = campo.where (self.water.area.spawning_true, self.water.area.true, self.water.area.false)
-    return self.water.area.spawning_grounds
+    water_d = water_depth.values()[0]
+    flow_v = flow_velocity.values()[0]
+    condition = (water_d >= 0.30) & (water_d <= 0.4) & (flow_v<=0.5) & (flow_v >=0.35)
+    spawning_ar = np.where(condition, 1,0)
+    spawning_prop = spawning_ar [np.newaxis,:,:]
+    return spawning_prop
 

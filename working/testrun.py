@@ -1,4 +1,4 @@
-import testmodel_config as cfg
+import model_config as cfg
 from barbel_model import FishEnvironment 
 from phenomena import CommonMeuse, Fish 
 import pcraster as pcr

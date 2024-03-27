@@ -21,4 +21,4 @@ data_T_res = 0.5            # data delta timestep in hours
 timesteps = 5               # nr of timesteps 
 
 # common barbel 
-nr_barbel = 10
+nr_barbel = 100

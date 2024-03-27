@@ -1,4 +1,10 @@
-
+from pathlib import Path
+import sys 
+import os 
+working = Path.cwd()
+up_dir = working.parent 
+pre_processing_dir = up_dir / 'pre_processing/'
+sys.path.append(pre_processing_dir)
 from xugrid_func import partial_reraster
 import numpy as np 
 import random
@@ -91,12 +97,9 @@ class CommonMeuse():
     
     def waterdepth_array (self): 
         '''See docstring about flow velocity array '''
-
         d_array = np.zeros ((self.timesteps+1, self.nrrows, self.nrcols))
-        t_mod = 0
-        for t in self.t_data : 
+        for t_mod, t in enumerate(self.t_data) : 
             d_array [t_mod,:,:] = partial_reraster (self.map_nc, self.resolution, t, 'mesh2d_waterdepth', self.xmin, self.xmax, self.ymin, self.ymax)
-            t_mod += 1 
         d_add_dim = d_array [np.newaxis, :, :, :]
         return d_add_dim
 
