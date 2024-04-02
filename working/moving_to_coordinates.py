@@ -3,6 +3,8 @@ import random
 from lookup import raster_values_to_feature
 from op_fields import new_property_from_property
 import campo
+from sklearn.neighbors import NearestNeighbors
+import math
 
 def coordinatelist_to_fieldloc (self, boolean_fieldprop, point_propset, resolution, xmin, ymin, nragents):
     '''
@@ -35,6 +37,26 @@ def coordinatelist_to_fieldloc (self, boolean_fieldprop, point_propset, resoluti
     return xcoords, ycoords 
 
 
+def find_closest_dest (self, clump_fieldprop, point_pset, pidx, minX, minY, resolution): 
+    point_x = point_pset.space_domain.xcoord [pidx]
+    point_y = point_pset.space_domain.ycoord [pidx]
+    ix = math.floor((point_x - minX) / resolution) # needs to be rouned down since we define it by the minimum and therefore lower border
+    iy = math.floor((point_y - minY) / resolution)
+    point = np.array([iy, ix]) # in indexes as in the field , with first row = y, column = x 
+    clump_array = np.flip(clump_fieldprop.values()[0])
+    potential_dest_idxs = np.where (clump_array != 0)
+    # convert indices to a 2D array of points 
+    pot_dest_points = np.column_stack(potential_dest_idxs) 
+
+    # Use NearestNeighbors to find the closest '1' 
+    nbrs = NearestNeighbors (n_neighbors= 1, algorithm='ball_tree').fit(pot_dest_points)
+    distances, indices = nbrs.kneighbors([point]) 
+    new_yidx, new_xidx= tuple(pot_dest_points[indices[0][0]])
+    xcoord = new_xidx* resolution + minX
+    ycoord = new_yidx* resolution + minY
+    travel_distance = float(distances [0][0])*resolution
+    return xcoord, ycoord, travel_distance
+
 def connected_move (self, clump_fieldprop, boolean_fieldprop, dest_fieldprop, point_pset, field_pset, resolution, xmin, ymin, nragents, timestep):
     '''Moving to a place which is connected to the initial location of the agent by allowing potential destinations
     to be part 
@@ -51,6 +73,7 @@ def connected_move (self, clump_fieldprop, boolean_fieldprop, dest_fieldprop, po
     xcoords = np.zeros ((nragents))
     ycoords = np.zeros ((nragents))
     available_area = np.zeros((nragents))
+    travel_distances = np.zeros ((nragents))
     for pidx, value_array in enumerate (agent_clumpID.values()):
         # make float out of the single value array
         value = value_array.item()   
@@ -58,12 +81,14 @@ def connected_move (self, clump_fieldprop, boolean_fieldprop, dest_fieldprop, po
         # making sure that for the first timestep, the agent get placed in a proper boolean field :), 
         # using the function coordinatelist_to_fieldloc one agent at a time, so that the agent is placed in the 
 
-        if timestep == 1 and value == 1: 
+        if timestep == 1 and value == 0: 
             xcoord_array, ycoord_array = coordinatelist_to_fieldloc (self, boolean_fieldprop, point_pset, resolution, xmin, ymin, 1)
             xcoords [pidx] = xcoord_array.item()
             ycoords [pidx] = ycoord_array.item()
-        # elif value==1: 
-        # find closest =!1 
+        elif value==0: 
+            # find the closest non-dry land to go to 
+            xcoords [pidx], ycoords [pidx], travel_distances [pidx] = find_closest_dest (self, clump_fieldprop, point_pset, pidx, xmin, ymin, resolution)  
+            # no more searching for spawning ! 
         else:
             fieldprop_boolean_value = np.where (clump_fieldprop.values()[0] == value, 1, 0)
             array_dest = dest_fieldprop.values()[0]
@@ -71,19 +96,19 @@ def connected_move (self, clump_fieldprop, boolean_fieldprop, dest_fieldprop, po
             map_flipped = np.flip (prob_destination, axis=0)
             coords_idx = np.argwhere (map_flipped)
             available_pix = len(coords_idx)
-            available_area [pidx] = available_pix*resolution**2 # the available area in unit^2 as in the data 
-            print (available_area[pidx])
+            available_area [pidx] = available_pix*resolution**2 # the available area per barbel in unit^2 as in the data 
             # if theres no spawning in proximate area, remain at same place !  
             if available_pix == 0: 
                 xcoords [pidx] = point_pset.space_domain.xcoord[pidx]
                 ycoords [pidx] = point_pset.space_domain.ycoord[pidx]
+             
             else: 
                 coords_list = [tuple(row) for row in coords_idx]  # coordinates of the suitable places in [y,x]
                 random_single_destination = random.sample (coords_list, 1) # list with tuple in it 
                 yidx, xidx = random_single_destination[0]
                 xcoords[pidx] = xidx* resolution + xmin 
                 ycoords[pidx] = yidx* resolution + ymin
+                travel_distances [pidx] = np.sqrt ((point_pset.space_domain.xcoord[pidx]-xcoords[pidx])**2 + (point_pset.space_domain.ycoord[pidx]-ycoords[pidx])**2)
 
-    return xcoords, ycoords, available_area
 
-
+    return xcoords, ycoords, available_area, travel_distances 

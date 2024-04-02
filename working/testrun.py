@@ -1,4 +1,4 @@
-import model_config as cfg
+import testmodel_config as cfg
 from barbel_model import FishEnvironment 
 from phenomena import CommonMeuse, Fish 
 import pcraster as pcr
@@ -6,14 +6,13 @@ import pcraster.framework as pcrfw
 
 commonBarbel = Fish(cfg.nr_barbel, cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.input_d)
 commonMeuse = CommonMeuse (cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.spatial_resolution, cfg.map_nc, cfg.timesteps, cfg.temporal_resolution, cfg.data_T_res, cfg.input_d)
-commonMeuse.extent()
-commonBarbel.extent()
-
+commonMeuse.extent() # generates a csv file describing the extent of the Meuse
+commonBarbel.extent() # generetes a csv file describing coordinatesets for each barbel
 commonMeuse.time_domain()
 u = commonMeuse.flow_velocity_array()
 d = commonMeuse.waterdepth_array()
 
 if __name__ == "__main__":
-    myModel = FishEnvironment(cfg.input_d, cfg.output_d, u, d, cfg.spatial_resolution, cfg.xmin, cfg.ymin, cfg.nr_barbel)
+    myModel = FishEnvironment(cfg.input_d, cfg.output_d, u, d, cfg.spatial_resolution, cfg.xmin, cfg.ymin, cfg.nr_barbel, cfg.spawning_conditions, cfg.adult_conditions)
     dynFrw = pcrfw.DynamicFramework(myModel, cfg.timesteps)
     dynFrw.run()

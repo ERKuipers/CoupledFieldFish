@@ -23,6 +23,7 @@ def raster_values_to_feature(point_pset, field_pset, field_prop):
   for pidx,coordinate in enumerate(point_pset.space_domain):
     point_x = point_pset.space_domain.xcoord[pidx]
     point_y = point_pset.space_domain.ycoord[pidx]
+    
     point_value = np.zeros(1) # should make this also for multiple agent fields 
     #point_value = np.zeros (len(field_pset.space_domain[:,1]))
     for fidx,area in enumerate(field_pset.space_domain):
@@ -31,7 +32,7 @@ def raster_values_to_feature(point_pset, field_pset, field_prop):
       nr_rows = int(area[4])
       nr_cols = int(area[5]) # 
       minX = area [0]
-      minY = area [1]
+      minY = area [1] 
       
       cellsize = math.fabs(area[2] - minX) / nr_cols # 0 = x, from now on: cols = x , because x, y and cols, row
       ix = math.floor((point_x - minX) / cellsize) # needs to be rouned down since we define it by the minimum and therefore lower border

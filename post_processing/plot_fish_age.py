@@ -8,6 +8,7 @@ import datetime
 from pathlib import Path
 import os 
 import sys
+import xarray as xr
 post_processing = Path.cwd()
 sys.path.append(post_processing)
 up_dir = post_processing.parent
@@ -30,18 +31,20 @@ swim_df = campo.dataframe.select(dataset.water, property_names=['swimmable'])
 connected_swim_df = campo.dataframe.select (dataset.water, property_names=['connected_swimmable'])
 dataframe_age = campo.dataframe.select (dataset.barbel, property_names = ['lifestatus'])
 area_df = campo.dataframe.select(dataset.barbel, property_names =['spawning_area'])
-for t in range(1, 6):
+timesteps = 5 # should make this linked
+resolution = 10 
+total_spawnarea = np.zeros (timesteps)
+timevector = np.arange (0,timesteps,1)
+for t in range(1,6):
     coords = campo.dataframe.coordinates(dataset, "barbel", "adults", t)
      # let op : neemt alleen laatste key mee!!!!! als df 
 
-    tmp_df = campo.to_df(dataframe_age, t)  # is only for dataframe before timestep 0 
+    tmp_df = campo.to_df(dataframe_age, t)  # is only for dataframe before starting at t =1 
     campo.mobile_points_to_gpkg(coords, tmp_df,(f"barbel_{t}.gpkg"), 'EPSG:28992')
-    area_df_df = campo.to_df(area_df, t)
-    
-    
 
-    raster = df["water"]["area"]['flow_velocity'][0][t - 1]
-    spawnraster = spawn_df["water"]["area"]['spawning_grounds'][0][t - 1]
+    raster = df["water"]["area"]['flow_velocity'][0][t - 1] # type = xarray.core.dataarray.DataArray
+    spawnraster = spawn_df["water"]["area"]['spawning_grounds'][0][t - 1] 
+    total_spawnarea [t-1] = resolution**2*spawnraster.sum()
     depthraster = depth_df["water"]["area"]['water_depth'][0][t - 1]
     swimraster = swim_df['water']["area"]['swimmable'][0][t-1]
     connected_swimraster = connected_swim_df['water']["area"]['connected_swimmable'][0][t-1]
@@ -55,7 +58,6 @@ for t in range(1, 6):
 
 campo.to_csv(area_df, f'available_area')
 available_area_frame = pandas.read_csv('available_area_spawning_area.csv')
-print (available_area_frame)
 
 
 #%%
@@ -67,3 +69,10 @@ for t in range (5):
     plt.ylabel ('Number of barbel')
     plt.title (f'Timestep {t}')
     plt.show()
+
+plt.figure()
+plt.scatter (timevector*12,total_spawnarea)
+plt.title ('Spawning area in Common Meuse for each timestep')
+plt.xlabel ('Time in hours')
+plt.ylabel ('Spawning area ($m^2$)')
+plt.show()
