@@ -67,7 +67,11 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         self.barbel.adults.lifestatus.is_dynamic = True # barbel age changes over time and barbel items are mobile  
         self.barbel.adults.spawning_area = 0 # describing the total available spawning area for each individual barbel
         self.barbel.adults.spawning_area.is_dynamic = True 
-        
+        self.barbel.adults.has_spawned =0 
+        self.barbel.adults.has_spawned.is_dynamic = True
+        self.barbel.adults.distance_to_spawn = 0
+        self.barbel.adults.distance_to_spawn.is_dynamic = True
+     
         ####################
         # Phenomenon Water #
         ####################
@@ -98,22 +102,23 @@ class FishEnvironment(pcrfw.DynamicModel, ):
 
     def dynamic(self):
         start = datetime.datetime.now()
-        # first setting environmental variables, then positioning the barbels 
+        # first setting environmental variables, then positioning the barbels as a response to the alternation in habitat
         self.water.area.water_depth = self.dt_array [:,self.currentTimeStep(), :,:]
         self.water.area.flow_velocity = self.ut_array [:,self.currentTimeStep(), :,:]
         self.water.area.spawning_grounds = two_conditions_boolean_prop (self, self.water.area.water_depth, self.water.area.flow_velocity, self.spawning_conditions)
         self.water.area.swimmable = two_conditions_boolean_prop(self, self.water.area.water_depth, self.water.area.flow_velocity, self.adult_conditions)
-
         # move them within their connected swimmable areas
         self.water.area.connected_swimmable = campo_clump (self, self.water.area.swimmable)
-        movingX, movingY, spawning_area, travel_distance = connected_move (self, self.water.area.connected_swimmable, self.water.area.swimmable, self.water.area.spawning_grounds, self.barbel.adults, self.water.area, self.resolution, self.xmin, self.ymin, self.nrbarbels, self.currentTimeStep()) 
+        movingX, movingY, spawning_area, travel_distance, has_spawned = connected_move (self, self.water.area.connected_swimmable, self.water.area.swimmable, self.water.area.spawning_grounds, self.barbel.adults, self.water.area, self.resolution, self.xmin, self.ymin, self.nrbarbels, self.currentTimeStep(), self.barbel.adults.has_spawned) 
         # move agents over field: 
         barbel_coords = self.barbel.adults.get_space_domain(self.currentTimeStep())
         barbel_coords.xcoord = movingX
         barbel_coords.ycoord = movingY
         self.barbel.adults.set_space_domain(barbel_coords, (self.currentTimeStep ())) 
         self.barbel.adults.spawning_area = spawning_area
-
+        self.barbel.adults.has_spawned = has_spawned
+        self.barbel.adults.justswam = travel_distance
+        self.barbel.adults.distance_to_spawn = self.barbel.adults.distance_to_spawn + self.barbel.adults.justswam # keep on adding the swimming distance
         
         self.fishenv.write(self.currentTimeStep())
         end = datetime.datetime.now() - start

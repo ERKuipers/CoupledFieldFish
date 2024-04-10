@@ -29,7 +29,7 @@ def campo_clump (self,boolean_fieldprop):
 
 def connected_swimmable (self, waterdepth, flow_velocity, prop_name):
     swimmable_boolean = swimmable (self, waterdepth, flow_velocity, 'swimmable_boolean')
-    connected_swimmable = campo_clump (self, swimmable_boolean, prop_name)
+    connected_swimmable = campo_clump (self, swimmable_boolean)
     return connected_swimmable
 
 
