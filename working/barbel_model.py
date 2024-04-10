@@ -42,11 +42,11 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         self.fishenv = campo.Campo(seed = 1)
 
         # create real time settings for lue: 
-        date = datetime.date(2000, 1, 2)
-        time = datetime.time(12, 34)
+        date = datetime.date(2019, 6, 1)
+        time = datetime.time(00,00)
         start = datetime.datetime.combine(date, time)
-        unit = campo.TimeUnit.month
-        stepsize = 4
+        unit = campo.TimeUnit.hour
+        stepsize = 12
         
         # create the output lue data set
         self.fishenv.create_dataset(self.output_dir / "fish_environment.lue")
