@@ -16,9 +16,9 @@ xmax,ymax =  193400, 353000 #180000, 331000 #
 spatial_resolution = 10     # metres , rerasterizing the flexible mesh
 
 # temporal resolution # 
-temporal_resolution = 12    # delta timestep of the model, in hours 
+temporal_resolution = 6    # delta timestep of the model, in hours 
 data_T_res = 0.5            # data delta timestep in hours 
-timesteps = 5               # nr of timesteps 
+timesteps = 240               # nr of timesteps 
 
 # common barbel 
 nr_barbel = 100

@@ -9,6 +9,7 @@ import os
 import sys
 
 cur = Path.cwd()
+
 up_dir = cur.parent
 post_processing = up_dir / 'post_processing'
 sys.path.append(f"{post_processing}")
@@ -18,25 +19,18 @@ map_nc = input_d / 'maas_data'/'new_fm_map.nc'
 discharge_csv = post_processing / '20190601_20190801_dischargeBorgharenDorp.csv'
 fish_env = output_d / 'fish_environment.lue'
 
-with open(discharge_csv, encoding='utf-8', errors='ignore') as f:  
-    discharge_df = pd.read_csv(f, sep=';', header=0)
-
-discharge_df.loc[discharge_df['ALFANUMERIEKEWAARDE'] > 1000, 'ALFANUMERIEKEWAARDE'] = np.nan
-discharge_df.loc[discharge_df['ALFANUMERIEKEWAARDE'] > 300, 'ALFANUMERIEKEWAARDE'] = 300
-
-discharge = discharge_df ['ALFANUMERIEKEWAARDE']
+discharge_df = pd.read_csv(discharge_csv)
+discharge = discharge_df['ALFANUMERIEKEWAARDE']
 date_strseries = discharge_df['WAARNEMINGDATUM']
 time_strseries = discharge_df['WAARNEMINGTIJD (MET/CET)']
 date_parsed = pd.to_datetime(date_strseries, format="%d-%m-%Y") 
 time_parsed = pd.to_datetime (time_strseries, format="%H:%M:%S").dt.time
 real_time = date_parsed + pd.to_timedelta(time_parsed.astype(str))
 
-# were going to plot the relation with nr of clumps over discharges over time !! dope 
 plt.figure()
-plt.plot(real_time[:-1], discharge[:-1])
+plt.plot(real_time, discharge)
 plt.title ('Discharge over time at Borgharen')
 plt.ylabel ('Discharge ($m^3/s$)')
 plt.xticks(rotation=45)
 plt.tight_layout()
 plt.show()
-print (discharge)

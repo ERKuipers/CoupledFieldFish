@@ -1,3 +1,10 @@
+from pathlib import Path
+import os 
+import sys
+in_dir = Path.cwd()
+up_dir = in_dir.parent
+working = up_dir / 'working'
+sys.path.append(str(working))
 import testmodel_config as cfg
 from barbel_model import FishEnvironment 
 from phenomena import CommonMeuse, Fish 

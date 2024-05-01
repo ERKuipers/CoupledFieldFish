@@ -77,7 +77,7 @@ for t_coords in coords_timevector:
 # adding environmental data 
 plt.figure(1)
 plt.imshow(depthraster, cmap='viridis') # uc_mag is de magnitude van de stroomsnelheid.
-plt.colorbar()
+plt.colorbar ()
 plt.show()
 
 

@@ -5,13 +5,12 @@ import datetime
 import os
 import sys
 from pathlib import Path
-# sys.path.append ("C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/CoupledFieldFish/pre_processing/")
-# sys.path.append ("C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/CoupledFieldFish")
 import pcraster as pcr
 import pcraster.framework as pcrfw
 import campo
 import numpy as np 
 from matplotlib import pyplot as plt
+from lookup import window_values_to_feature
 from lifecycle_pref import two_conditions_boolean_prop, campo_clump
 from moving_to_coordinates import coordinatelist_to_fieldloc, connected_move
 
@@ -20,7 +19,6 @@ from moving_to_coordinates import coordinatelist_to_fieldloc, connected_move
 #########
 
 class FishEnvironment(pcrfw.DynamicModel, ):
-
     def __init__(self, input_dir, output_dir, ut_array, dt_array, spatial_resolution, xmin, ymin, nrbarbels, spawning_conditions, adult_conditions):
         pcrfw.DynamicModel.__init__(self)
         # Framework requires a clone
@@ -71,7 +69,8 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         self.barbel.adults.has_spawned.is_dynamic = True
         self.barbel.adults.distance_to_spawn = 0
         self.barbel.adults.distance_to_spawn.is_dynamic = True
-     
+        self.barbel.adults.surrounding = 0 
+        self.barbel.adults.surrounding.is_dynamic = True
         ####################
         # Phenomenon Water #
         ####################
@@ -119,7 +118,7 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         self.barbel.adults.has_spawned = has_spawned
         self.barbel.adults.justswam = travel_distance
         self.barbel.adults.distance_to_spawn = self.barbel.adults.distance_to_spawn + self.barbel.adults.justswam # keep on adding the swimming distance
-        
+        self.barbel.adults.surrounding = window_values_to_feature (self.barbel.adults, self.water.area, self.water.area.water_depth, 30, 'mean')
         self.fishenv.write(self.currentTimeStep())
         end = datetime.datetime.now() - start
         print(f'ts:  {end}  write, timestep: {self.currentTimeStep()}')

@@ -17,30 +17,152 @@ from campo.property import Property
 
 
 def raster_values_to_feature(point_pset, field_pset, field_prop):
-
-  tmp_prop = Property('emptycreatename', point_pset.uuid, point_pset.space_domain, point_pset.shapes)
+  ''' Queries the raster values of one field property on the location of point agents, 
+  writes this as a new point agent property set 
+  Parameters:
+    point_pset: property set of the point agents to be attributed the location 
+    field_pset: property set of a single field 
+    field_prop: property of which the values are attributed to the newly generated point property
+  Returns: 
+    point_prop: property of point agents with values of local field values'''
   
+  # generate empty point property given point property space definitions
+  point_prop = Property('emptycreatename', point_pset.uuid, point_pset.space_domain, point_pset.shapes)
+  
+  # loop over space attributes of the different points in the point agents propertyset
   for pidx,coordinate in enumerate(point_pset.space_domain):
     point_x = point_pset.space_domain.xcoord[pidx]
     point_y = point_pset.space_domain.ycoord[pidx]
-    
-    point_value = np.zeros(1) # should make this also for multiple agent fields 
-    #point_value = np.zeros (len(field_pset.space_domain[:,1]))
+
+    point_value = np.zeros(1)  
     for fidx,area in enumerate(field_pset.space_domain):
 
-      # fidx for every field in the field phenomenon 
+      # get bounding box of field
       nr_rows = int(area[4])
       nr_cols = int(area[5]) # 
       minX = area [0]
       minY = area [1] 
       
-      cellsize = math.fabs(area[2] - minX) / nr_cols # 0 = x, from now on: cols = x , because x, y and cols, row
-      ix = math.floor((point_x - minX) / cellsize) # needs to be rouned down since we define it by the minimum and therefore lower border
-      iy = math.floor((point_y - minY) / cellsize) # need to find a solution for when point_x/y = minX/Y
+      # translate point coordinate to index on the field array
+      cellsize = math.fabs(area[2] - minX) / nr_cols 
+      ix = math.floor((point_x - minX) / cellsize) 
+      iy = math.floor((point_y - minY) / cellsize) 
       
-      reshaped = np.flip (field_prop.values()[fidx], axis=0) #needs to be reshaped because of weird import 
-      point_value[fidx] = reshaped[iy,ix] # because rows, columns = y, x
-      # maybe built try except block to try the value for the different fields and skip it if the index is not available 
-    tmp_prop.values()[pidx] = point_value # could be list if there are more fields at that location
+      # reshape property to a mirrored numpy field array to accommodate right use of point and agent indexes 
+      reshaped = np.flip (field_prop.values()[fidx], axis=0) 
 
-  return tmp_prop
+      # query the field attribute given point location
+      point_value[fidx] = reshaped[iy,ix] 
+
+    # write the value to the point property for each point agent
+    point_prop.values()[pidx] = point_value 
+
+  return point_prop
+
+def window_values_to_feature(point_pset, field_pset, field_prop, windowsize, operation):
+  ''' Queries aggregative raster values of a window of a field property based from the location of point agents, 
+  Given a certain aggregative operation. Writes this as a new point agent property. 
+  Parameters:
+    point_pset: property set of the point agents to be attributed the location 
+    field_pset: property set of a single field 
+    field_prop: property of which the values are attributed to the newly generated point property
+    windowsize: we make square windows: windowsize describes the length of the window in the unit of the field_property
+    operation: aggregative numpy operation as a string ('sum', 'mean', 'min', 'max', 'etc')
+  Returns: 
+    point_prop: property of point agents with values of aggregated field values'''
+  
+  # Generate operator, first checking if operation is available in numpy
+  if not hasattr (np, operation):
+    raise ValueError (f'Unsupported numpy operation, {operation}')
+  operator = getattr(np, operation)
+
+  # Generate empty point property given point property space definitions
+  point_prop = Property('emptycreatename', point_pset.uuid, point_pset.space_domain, point_pset.shapes)
+  # Loop over space attributes of the different points in the point agents propertyset
+  for pidx,coordinate in enumerate(point_pset.space_domain):
+    point_x = point_pset.space_domain.xcoord[pidx]
+    point_y = point_pset.space_domain.ycoord[pidx]
+
+    window_value = np.zeros(1)  
+    for fidx,area in enumerate(field_pset.space_domain):
+      # Get bounding box of field
+      nr_rows = int(area[4])
+      nr_cols = int(area[5]) # 
+      minX = area [0]
+      minY = area [1] 
+      
+      # Translate point coordinate to index on the field array
+      cellsize = math.fabs(area[2] - minX) / nr_cols # in unit of length 
+      ix = math.floor((point_x - minX) / cellsize) 
+      iy = math.floor((point_y - minY) / cellsize) 
+      
+      nr_windowcells = math.floor(windowsize/cellsize)
+
+      ws_iy = math.floor(iy - 0.5*nr_windowcells) 
+      we_iy = math.floor(iy + 0.5*nr_windowcells)
+      ws_ix = math.floor (ix - 0.5*nr_windowcells)
+      we_ix = math.floor (ix + 0.5*nr_windowcells)
+      # Reshape field property to a mirrored numpy field array to accommodate right use of point and agent indexes 
+      reshaped = np.flip (field_prop.values()[fidx], axis=0) 
+      
+      # Query the field attribute given point location
+      window_value[fidx] = operator (reshaped [ws_iy:we_iy, ws_ix:we_ix])
+    
+    # Write the value to the point property for each point agent
+    point_prop.values()[pidx] = window_value 
+
+  return point_prop
+
+def zonal_values_to_feature(point_pset, field_pset, field_prop, windowsize, operation):
+  ''' Queries aggregative raster values of a window of a field property based from the location of point agents, 
+  Given a certain aggregative operation. Writes this as a new point agent property. 
+  Parameters:
+    point_pset: property set of the point agents to be attributed the location 
+    field_pset: property set of a single field 
+    field_prop: property of which the values are attributed to the newly generated point property
+    windowsize: we make square windows: windowsize describes the length of the window in the unit of the field_property
+    operation: aggregative numpy operation as a string ('sum', 'mean', 'min', 'max', 'etc')
+  Returns: 
+    point_prop: property of point agents with values of aggregated field values'''
+  
+  # Generate operator, first checking if operation is available in numpy
+  if not hasattr (np, operation):
+    raise ValueError (f'Unsupported numpy operation, {operation}')
+  operator = getattr(np, operation)
+
+  # Generate empty point property given point property space definitions
+  point_prop = Property('emptycreatename', point_pset.uuid, point_pset.space_domain, point_pset.shapes)
+  # Loop over space attributes of the different points in the point agents propertyset
+  for pidx,coordinate in enumerate(point_pset.space_domain):
+    point_x = point_pset.space_domain.xcoord[pidx]
+    point_y = point_pset.space_domain.ycoord[pidx]
+
+    window_value = np.zeros(1)  
+    for fidx,area in enumerate(field_pset.space_domain):
+      # Get bounding box of field
+      nr_rows = int(area[4])
+      nr_cols = int(area[5]) # 
+      minX = area [0]
+      minY = area [1] 
+      
+      # Translate point coordinate to index on the field array
+      cellsize = math.fabs(area[2] - minX) / nr_cols # in unit of length 
+      ix = math.floor((point_x - minX) / cellsize) 
+      iy = math.floor((point_y - minY) / cellsize) 
+      
+      nr_windowcells = math.floor(windowsize/cellsize)
+
+      ws_iy = math.floor(iy - 0.5*nr_windowcells) 
+      we_iy = math.floor(iy + 0.5*nr_windowcells)
+      ws_ix = math.floor (ix - 0.5*nr_windowcells)
+      we_ix = math.floor (ix + 0.5*nr_windowcells)
+      # Reshape field property to a mirrored numpy field array to accommodate right use of point and agent indexes 
+      reshaped = np.flip (field_prop.values()[fidx], axis=0) 
+      
+      # Query the field attribute given point location
+      window_value[fidx] = operator (reshaped [ws_iy:we_iy, ws_ix:we_ix])
+    
+    # Write the value to the point property for each point agent
+    point_prop.values()[pidx] = window_value 
+
+  return point_prop

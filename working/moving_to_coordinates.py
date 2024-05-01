@@ -1,10 +1,11 @@
 import numpy as np
 import random 
 from lookup import raster_values_to_feature
-from op_fields import new_property_from_property
 import campo
 from sklearn.neighbors import NearestNeighbors
 import math
+
+def random_move
 
 def coordinatelist_to_fieldloc (self, boolean_fieldprop, resolution, xmin, ymin, nragents):
     '''
@@ -85,7 +86,8 @@ def find_closest_dest (self, boolean_fieldprop, point_pset_orX, pidx_orY, minX, 
     travel_distance = float(distances [0][0])*resolution
     return xcoord, ycoord, travel_distance
 
-def move_directed_border (self, dest_boolean_fieldprop, boolean_clump_fieldprop, point_pset, pidx, minX, minY, resolution):
+
+def move_directed (self, dest_boolean_fieldprop, boolean_clump_fieldprop, point_pset, pidx, minX, minY, resolution):
     '''boolean_clump_fieldprop = the current clump as a boolean map (is all available area for the current location of the )'''
     # Find closest spawning area pixel destination 
     closest_destX, closest_destY, dist1 = find_closest_dest(self, dest_boolean_fieldprop, point_pset, pidx, minX, minY, resolution)
@@ -113,49 +115,45 @@ def connected_move (self, clump_fieldprop, boolean_fieldprop, dest_fieldprop, po
     ycoords = np.zeros ((nragents))
     available_area = np.zeros((nragents))
     travel_distances = np.zeros ((nragents))
-    spawns = has_spawned_pointprop.values() # this needs to be implemented from the fieldprop so that it does not get overwritten by a 0 value in a next timestep
+    spawns = np.hstack(list(has_spawned_pointprop.values().values.values())) # creating an numpy array while using the property values
+    print ((spawns)) # this needs to be implemented from the fieldprop so that it does not get overwritten by a 0 value in a next timestep
     for pidx, value_array in enumerate (agent_clumpID.values()):
         # Make float out of the single value array
-        value = value_array.item()   
+        value = value_array.item()
+        fieldprop_boolean_value = np.where (clump_fieldprop.values()[0] == value, 1, 0)  
         # Being sweet for beginner agents: 
         # Making sure that for the first timestep, the agent get placed in a proper boolean field :), 
         # Using the function coordinatelist_to_fieldloc one agent at a time, so that the agent is placed in the 
-        
         if timestep == 1: # first moving the 
             xcoord_array, ycoord_array = coordinatelist_to_fieldloc (self, boolean_fieldprop, resolution, xmin, ymin, 1)
             xcoords [pidx] = xcoord_array.item()
             ycoords [pidx] = ycoord_array.item()
- 
+        elif has_spawned_pointprop.values()[pidx]==1:
+            xcoord_array, ycoord_array = coordinatelist_to_fieldloc (self, fieldprop_boolean_value, resolution, xmin, ymin, 1)
+            xcoords [pidx] = xcoord_array.item()
+            ycoords [pidx] = ycoord_array.item()
+            print (f'been there, done that (the spawning), {pidx} out')
         elif value == 0: # on non-swimmable no destination to go to, just the closest piece of swimmable area 
             # find the closest non-dry land to go to 
             xcoords [pidx], ycoords [pidx], travel_distances [pidx] = find_closest_dest (self, clump_fieldprop, point_pset, pidx, xmin, ymin, resolution)  
             print (f'i, {pidx}, am dryswimming! help me get back')
-            # no more searching for spawning ! 
-        else:
-            fieldprop_boolean_value = np.where (clump_fieldprop.values()[0] == value, 1, 0)
-            # barbels only spawn once a season , else random placement within their clump (maybe death? :0)
-            if has_spawned_pointprop.values()[pidx]==1: #is true
-                xcoord_array, ycoord_array = coordinatelist_to_fieldloc (self, fieldprop_boolean_value, resolution, xmin, ymin, 1)
+        else: 
+            array_dest = dest_fieldprop.values()[0]
+            prob_destination = np.multiply (fieldprop_boolean_value, array_dest)
+            available_pix = (len(np.argwhere (prob_destination)))
+                # the available area per barbel in unit^2 as in the data 
+            # if theres no spawning in proximate area, move in the direction of the closest
+            if available_pix == 0: # has not spawned yet but no available area
+                xcoords [pidx], ycoords [pidx], travel_distances [pidx] = move_directed (self, dest_fieldprop, fieldprop_boolean_value, point_pset, pidx, xmin, ymin, resolution)
+                print (f'I {pidx} rate the spawning availability over here 0/5 stars')
+            else: # spawning: 
+                xcoord_array, ycoord_array = coordinatelist_to_fieldloc (self, prob_destination, resolution, xmin, ymin, 1)
                 xcoords [pidx] = xcoord_array.item()
                 ycoords [pidx] = ycoord_array.item()
-                print (f'been there, done that (the spawning), {pidx} out')
-            else: 
-                array_dest = dest_fieldprop.values()[0]
-                prob_destination = np.multiply (fieldprop_boolean_value, array_dest)
-                available_pix = (len(np.argwhere (prob_destination)))
-                 # the available area per barbel in unit^2 as in the data 
-                # if theres no spawning in proximate area, move in the direction of the closest
-                if available_pix == 0: # has not spawned yet but no available area
-                    xcoords [pidx], ycoords [pidx], travel_distances [pidx] = move_directed_border (self, dest_fieldprop, fieldprop_boolean_value, point_pset, pidx, xmin, ymin, resolution)
-                    print (f'I {pidx} rate the spawning availability over here 0/5 stars')
-                else: # spawning: 
-                    xcoord_array, ycoord_array = coordinatelist_to_fieldloc (self, prob_destination, resolution, xmin, ymin, 1)
-                    xcoords [pidx] = xcoord_array.item()
-                    ycoords [pidx] = ycoord_array.item()
-                    available_area [pidx] = available_pix*(resolution**2)
-                    travel_distances [pidx] = np.sqrt ((point_pset.space_domain.xcoord[pidx]-xcoords[pidx])**2 + (point_pset.space_domain.ycoord[pidx]-ycoords[pidx])**2)
-                    spawns [pidx] = 1
-                    print (f'dope ! #sex {pidx}')
+                available_area [pidx] = available_pix*(resolution**2)
+                travel_distances [pidx] = np.sqrt ((point_pset.space_domain.xcoord[pidx]-xcoords[pidx])**2 + (point_pset.space_domain.ycoord[pidx]-ycoords[pidx])**2)
+                spawns [pidx] = 1
+                print (f'dope ! #sex {pidx}')
 
     return xcoords, ycoords, available_area, travel_distances, spawns 
 
