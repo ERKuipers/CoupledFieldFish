@@ -5,7 +5,6 @@ import campo
 from sklearn.neighbors import NearestNeighbors
 import math
 
-def random_move
 
 def coordinatelist_to_fieldloc (self, boolean_fieldprop, resolution, xmin, ymin, nragents):
     '''
