@@ -5,7 +5,7 @@ in_dir = Path.cwd()
 up_dir = in_dir.parent
 working = up_dir / 'working'
 sys.path.append(str(working))
-import testmodel_config as cfg
+import model_config as cfg
 from barbel_model import FishEnvironment 
 from phenomena import CommonMeuse, Fish 
 import pcraster as pcr
@@ -21,7 +21,7 @@ u = commonMeuse.flow_velocity_array()
 d = commonMeuse.waterdepth_array()
 
 if __name__ == "__main__":
-    myModel = FishEnvironment(cfg.input_d, cfg.output_d, u, d, cfg.spatial_resolution, cfg.xmin, cfg.ymin, cfg.nr_barbel, cfg.spawning_conditions, cfg.adult_conditions)
+    myModel = FishEnvironment(cfg.input_d, cfg.output, u, d, cfg.spatial_resolution, cfg.temporal_resolution, cfg.xmin, cfg.ymin, cfg.nr_barbel, cfg.spawning_conditions, cfg.adult_conditions)
     dynFrw = pcrfw.DynamicFramework(myModel, cfg.timesteps)
     dynFrw.run()
 

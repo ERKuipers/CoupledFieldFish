@@ -4,9 +4,9 @@ import numpy as np
 working = Path.cwd()
 up_dir = working.parent
 input_d = up_dir / 'input'
-output_d = up_dir / 'output'
+output = up_dir / "output/fish_environment.lue"
 post_processing = up_dir / 'post_processing'
-
+file_name = 'fish_environment.l'
 # data 
 map_nc = input_d / 'maas_data'/'new_fm_map.nc'
 loc_CSV = input_d / 'barbel_coords.csv'
@@ -16,13 +16,16 @@ xmax,ymax =  193400, 353000 #180000, 331000 #
 spatial_resolution = 10     # metres , rerasterizing the flexible mesh
 
 # temporal resolution # 
-temporal_resolution = 6    # delta timestep of the model, in hours 
+temporal_resolution = 48    # delta timestep of the model, in hours 
 data_T_res = 0.5            # data delta timestep in hours 
-timesteps = 240               # nr of timesteps 
+timesteps = 10               # nr of timesteps 
 
 # common barbel 
 nr_barbel = 100
 
+# maximum radius of sensing and moving per day (cut up in one piece)
+radius = 20000 # maximal swimming per timestep
+dt_radius = temporal_resolution/24*radius 
 # ranges of preferences 
 spawning_wd_min = 0.3 
 spawning_wd_max = 0.4 
