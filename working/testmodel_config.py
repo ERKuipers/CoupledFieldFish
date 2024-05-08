@@ -6,7 +6,7 @@ up_dir = working.parent
 input_d = up_dir / 'input'
 output = up_dir / "output/fish_environment.lue"
 post_processing = up_dir / 'post_processing'
-file_name = 'fish_environment.l'
+file_name = 'fish_environment.lue'
 # data 
 map_nc = input_d / 'maas_data'/'new_fm_map.nc'
 loc_CSV = input_d / 'barbel_coords.csv'

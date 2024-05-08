@@ -1,24 +1,27 @@
 from pathlib import Path 
 import numpy as np
+import math
 # directory hierarchies 
 working = Path.cwd()
 up_dir = working.parent
 input_d = up_dir / 'input'
-output = up_dir / "output/fish_environment.lue"
+output_f = up_dir / "output/fish_environment.lue"
+output_dir = up_dir / "output/"
 post_processing = up_dir / 'post_processing'
-file_name = 'fish_environment.l'
+file_name = 'fish_environment.lue'
+
 # data 
 map_nc = input_d / 'maas_data'/'new_fm_map.nc'
-loc_CSV = input_d / 'barbel_coords.csv'
 
 xmin,ymin =  173000, 322000, # 179000, 329000  #
 xmax,ymax =  193400, 353000 #180000, 331000 #
 spatial_resolution = 10     # metres , rerasterizing the flexible mesh
 
 # temporal resolution # 
-temporal_resolution = 48    # delta timestep of the model, in hours 
-data_T_res = 0.5            # data delta timestep in hours 
-timesteps = 10               # nr of timesteps 
+temporal_resolution = 24    # delta timestep of the model, in hours 
+data_T_res = 0.5            # delta timestep in hours of the input data (to translate from model to data timestep)
+data_timesteps = 2930       # total number of timesteps in data available
+timesteps = 2 #math.floor(data_timesteps/(temporal_resolution/data_T_res))        # nr of timesteps if we want to run complete data
 
 # common barbel 
 nr_barbel = 100
@@ -26,6 +29,8 @@ nr_barbel = 100
 # maximum radius of sensing and moving per day (cut up in one piece)
 radius = 20000 # maximal swimming per timestep
 dt_radius = temporal_resolution/24*radius 
+attitude = 'assertive'
+
 # ranges of preferences 
 spawning_wd_min = 0.3 
 spawning_wd_max = 0.4 

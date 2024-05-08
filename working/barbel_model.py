@@ -17,16 +17,16 @@ import pcraster.framework as pcrfw
 import campo
 import numpy as np 
 from matplotlib import pyplot as plt
-from lookup import window_values_to_feature
 from lifecycle_pref import two_conditions_boolean_prop, campo_clump
 from moving_to_coordinates import move
+
 
 #########
 # model #
 #########
 
 class FishEnvironment(pcrfw.DynamicModel, ):
-    def __init__(self, input_dir, output, ut_array, dt_array, spatial_resolution, temporal_resolution, xmin, ymin, nrbarbels, spawning_conditions, adult_conditions):
+    def __init__(self, input_dir, output, ut_array, dt_array, spatial_resolution, temporal_resolution, xmin, ymin, nrbarbels, spawning_conditions, adult_conditions, radius, attitude):
         pcrfw.DynamicModel.__init__(self)
         # Framework requires a clone
         # set a dummy clone
@@ -42,6 +42,8 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         self.nrbarbels = nrbarbels
         self.spawning_conditions = spawning_conditions
         self.adult_conditions = adult_conditions
+        self.radius = radius
+        self.attitude = attitude
 
     def initial(self):
         init_start = datetime.datetime.now()
@@ -87,8 +89,8 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         # Property Set Area # 
         self.water.add_property_set ('area', self.input_dir / 'CommonMeuse.csv') # the water area always has the same spatial as well as temporal extent (it always exists)
         print ('added the field as a domain')  
-        self.water.area.lower = 0 # days
-        self.water.area.upper = 1
+        self.water.area.zero = 0 
+        self.water.area.one = 1
         #  Property Flow velocity # 
         self.water.area.flow_velocity = self.ut_array[:,self.currentTimeStep(), :, :]
         self.water.area.flow_velocity.is_dynamic = True
@@ -101,7 +103,6 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         self.water.area.swimmable.is_dynamic = True 
         self.water.area.connected_swimmable = campo_clump (self, self.water.area.swimmable)
         self.water.area.connected_swimmable.is_dynamic = True 
-
         self.fishenv.write() # write the lue dataset
         end = datetime.datetime.now() - init_start # print the run duration
         print(f'init: {end}, timestep: {self.currentTimeStep()}')
@@ -110,12 +111,16 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         start = datetime.datetime.now()
         # first setting environmental variables, then positioning the barbels as a response to the alternation in habitat
         self.water.area.water_depth = self.dt_array [:,self.currentTimeStep(), :,:]
+        plt.figure(1)
+        plt.imshow(self.water.area.water_depth.values()[0], cmap='viridis') # uc_mag is de magnitude van de stroomsnelheid.
+        plt.colorbar()
+        plt.show()
         self.water.area.flow_velocity = self.ut_array [:,self.currentTimeStep(), :,:]
         self.water.area.spawning_grounds = two_conditions_boolean_prop (self, self.water.area.water_depth, self.water.area.flow_velocity, self.spawning_conditions)
         self.water.area.swimmable = two_conditions_boolean_prop(self, self.water.area.water_depth, self.water.area.flow_velocity, self.adult_conditions)
         # move them within their connected swimmable areas
         self.water.area.connected_swimmable = campo_clump (self, self.water.area.swimmable)
-        movingX, movingY, spawning_area, travel_distance, has_spawned, movemode = move (self, self.water.area.connected_swimmable, self.water.area.swimmable, self.water.area.spawning_grounds, self.barbel.adults, self.water.area, self.nrbarbels, self.currentTimeStep(), self.barbel.adults.has_spawned) 
+        movingX, movingY, spawning_area, travel_distance, has_spawned, movemode = move (self.water.area.connected_swimmable, self.water.area.swimmable, self.water.area.spawning_grounds, self.barbel.adults, self.water.area, self.currentTimeStep(), self.barbel.adults.has_spawned, self.radius, self.attitude) 
         # move agents over field: 
         barbel_coords = self.barbel.adults.get_space_domain(self.currentTimeStep())
         barbel_coords.xcoord = movingX
@@ -126,8 +131,7 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         self.barbel.adults.justswam = travel_distance
         self.barbel.adults.movemode = movemode
         self.barbel.adults.swimdistance = self.barbel.adults.swimdistance + self.barbel.adults.justswam # keep on adding the swimming distance
-        
-        self.fishenv.write(self.currentTimeStep())
+
         end = datetime.datetime.now() - start
         print(f'ts:  {end}  write, timestep: {self.currentTimeStep()}')
 

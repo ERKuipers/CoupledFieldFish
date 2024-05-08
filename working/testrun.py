@@ -1,5 +1,5 @@
 from pathlib import Path
-import os 
+
 import sys
 in_dir = Path.cwd()
 up_dir = in_dir.parent
@@ -21,7 +21,7 @@ u = commonMeuse.flow_velocity_array()
 d = commonMeuse.waterdepth_array()
 
 if __name__ == "__main__":
-    myModel = FishEnvironment(cfg.input_d, cfg.output, u, d, cfg.spatial_resolution, cfg.temporal_resolution, cfg.xmin, cfg.ymin, cfg.nr_barbel, cfg.spawning_conditions, cfg.adult_conditions)
+    myModel = FishEnvironment(cfg.input_d, cfg.output_f, u, d, cfg.spatial_resolution, cfg.temporal_resolution, cfg.xmin, cfg.ymin, cfg.nr_barbel, cfg.spawning_conditions, cfg.adult_conditions, cfg.dt_radius, cfg.attitude)
     dynFrw = pcrfw.DynamicFramework(myModel, cfg.timesteps)
     dynFrw.run()
 

@@ -12,9 +12,7 @@ import model_config as cfg
 import lue.data_model as ldm
 import campo
 import numpy as np
-
 import matplotlib.pyplot as plt
-
 import xarray as xr
 import csv
 
@@ -33,7 +31,8 @@ dyn_timevector = np.arange (0,(int(timesteps)),1) # herein the timevector says 0
 coords_timevector = np.arange(1,(int(timesteps)+1),1) # no clue if 1 is then 0 or whatsoever
 nr_clumps = np.zeros ((timesteps))
 
-os.chdir(output_d) #      
+os.chdir(output_d)
+  
 
 #change it to make sure outputs are stored 
 df = campo.dataframe.select(dataset.water, property_names=[f'flow_velocity']) # space type = static_diff_field but should be dynamic field 
@@ -60,16 +59,14 @@ for t in dyn_timevector:
     depthraster = depth_df["water"]["area"]['water_depth'][0][t]
     swimraster = swim_df['water']["area"]['swimmable'][0][t]
 
-    
+
     connected_swimraster = connected_swim_df['water']["area"]['connected_swimmable'][0][t]
     nr_clumps [t] = np.max (connected_swimraster)
-
     campo.to_geotiff(swimraster, (f"swim_{t+1}.tif"), 'EPSG:28992') # writing t+1 because the 0 timestep is the first (see notes 26/3)
     campo.to_geotiff(raster, (f"flow_{t+1}.tif"), 'EPSG:28992')
     campo.to_geotiff(spawnraster, (f'spawn_{t+1}.tif'), 'EPSG:28992')
     campo.to_geotiff(depthraster, (f'depth_{t+1}.tif'), 'EPSG:28992')
     campo.to_geotiff(connected_swimraster, (f"connected_swim_{t+1}.tif"), 'EPSG:28992')
-
 clump_csv = output_d / "clump.csv"
 with open(f'{clump_csv}', 'w', newline='') as f:
     # Create a CSV writer object
@@ -87,6 +84,3 @@ plt.imshow(depthraster, cmap='viridis') # uc_mag is de magnitude van de stroomsn
 plt.colorbar()
 plt.show()
 
-
-
-# %%

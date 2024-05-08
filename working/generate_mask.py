@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import matplotlib.pyplot as plt
 def generate_mask (point_pset, pidx, field_pset, radius):
     '''radius = in unit of model, so probably metres '''
 
@@ -19,15 +20,17 @@ def generate_mask (point_pset, pidx, field_pset, radius):
         ix = math.floor((point_x - minX) / cellsize) 
         iy = math.floor((point_y - minY) / cellsize) 
     
-    cell_radius = math.floor(radius / cellsize)
-    mask = np.zeros((nr_rows, nr_cols))  # Initialize mask with NaN
+    
+    mask_unflipped = np.zeros((nr_rows, nr_cols))  # Initialize mask with NaN
 
     # Generate grid of coordinates
     x, y = np.meshgrid(np.arange(nr_cols), np.arange(nr_rows))
 
     # Calculate distance from each point to the center
     distance = np.sqrt((x - ix)**2 + (y - iy)**2)
-
+    # Convert model unit to number of cells 
+    cell_radius = math.floor(radius / cellsize)
     # Set values inside the radius to 1
-    mask[distance <= cell_radius] = 1
+    mask_unflipped[distance <= cell_radius] = 1
+    mask = np.flip (mask_unflipped, axis=0)
     return mask
