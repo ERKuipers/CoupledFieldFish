@@ -69,4 +69,3 @@ ax2.set_ylabel ('Spawning area ($m^2$)', color=color2)
 ax2.tick_params(axis='y', labelcolor=color2)
 plt.title ('Spawning area availability in Common Meuse over time')
 plt.show()
-

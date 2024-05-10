@@ -19,32 +19,33 @@ import numpy as np
 from matplotlib import pyplot as plt
 from lifecycle_pref import two_conditions_boolean_prop, campo_clump
 from moving_to_coordinates import move
-
+from xugrid_func import partial_reraster
 
 #########
 # model #
 #########
 
 class FishEnvironment(pcrfw.DynamicModel, ):
-    def __init__(self, input_dir, output, ut_array, dt_array, spatial_resolution, temporal_resolution, xmin, ymin, nrbarbels, spawning_conditions, adult_conditions, radius, attitude):
+    def __init__(self, input_dir, output, map_nc, spatial_resolution, temporal_resolution, conversion_T, xmin, ymin, xmax, ymax, nrbarbels, spawning_conditions, adult_conditions, radius, attitude):
         pcrfw.DynamicModel.__init__(self)
         # Framework requires a clone
         # set a dummy clone
         pcr.setclone(10, 20, 10, 0, 0)
         self.input_dir = input_dir 
         self.output = output 
-        self.ut_array = ut_array 
-        self.dt_array = dt_array
+        self.map_nc = map_nc
         self.resolution = spatial_resolution
         self.delta_t = temporal_resolution # delta timesteps
         self.xmin = xmin
         self.ymin = ymin 
+        self.xmax = xmax
+        self.ymax = ymax
         self.nrbarbels = nrbarbels
         self.spawning_conditions = spawning_conditions
         self.adult_conditions = adult_conditions
         self.radius = radius
         self.attitude = attitude
-
+        self.conversion_T = conversion_T # t to multiply the timesteps with to make it fit the timestep of the model 
     def initial(self):
         init_start = datetime.datetime.now()
         self.fishenv = campo.Campo(seed = 1)
@@ -57,9 +58,9 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         stepsize = self.delta_t
         
         # create the output lue data set
-        self.fishenv.create_dataset(self.output)
+        self.fishenv.create_dataset(f'{self.output}/fish_environment.lue')
         self.fishenv.set_time(start, unit, stepsize, self.nrTimeSteps())
-        
+        self.data_t = int(self.currentTimeStep()*self.conversion_T) 
         ###################
         # Phenomenon barbel #
         ###################
@@ -92,11 +93,14 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         self.water.area.zero = 0 
         self.water.area.one = 1
         #  Property Flow velocity # 
-        self.water.area.flow_velocity = self.ut_array[:,self.currentTimeStep(), :, :]
+        u_array = partial_reraster (self.map_nc, self.resolution, self.data_t, 'mesh2d_ucmag', self.xmin, self.xmax, self.ymin, self.ymax)
+        self.water.area.flow_velocity = u_array [np.newaxis, :, :]
         self.water.area.flow_velocity.is_dynamic = True
         # Property Water Depth # 
-        self.water.area.water_depth = self.dt_array[:,self.currentTimeStep(), :, :]
+        d_array = partial_reraster (self.map_nc, self.resolution, self.data_t, 'mesh2d_waterdepth', self.xmin, self.xmax, self.ymin, self.ymax)
+        self.water.area.water_depth = d_array [np.newaxis, :, :]
         self.water.area.water_depth.is_dynamic = True
+
         self.water.area.spawning_grounds = two_conditions_boolean_prop (self, self.water.area.water_depth, self.water.area.flow_velocity, self.spawning_conditions)
         self.water.area.spawning_grounds.is_dynamic = True
         self.water.area.swimmable = two_conditions_boolean_prop (self, self.water.area.water_depth, self.water.area.flow_velocity, self.adult_conditions)
@@ -109,17 +113,20 @@ class FishEnvironment(pcrfw.DynamicModel, ):
 
     def dynamic(self):
         start = datetime.datetime.now()
+        self.data_t = int(self.currentTimeStep()*self.conversion_T) # update the  given data timestep with updated current timestep as by the pcraster framework 
         # first setting environmental variables, then positioning the barbels as a response to the alternation in habitat
-        self.water.area.water_depth = self.dt_array [:,self.currentTimeStep(), :,:]
-        plt.figure(1)
-        plt.imshow(self.water.area.water_depth.values()[0], cmap='viridis') # uc_mag is de magnitude van de stroomsnelheid.
-        plt.colorbar()
-        plt.show()
-        self.water.area.flow_velocity = self.ut_array [:,self.currentTimeStep(), :,:]
+        u_array = partial_reraster (self.map_nc, self.resolution, self.data_t, 'mesh2d_ucmag', self.xmin, self.xmax, self.ymin, self.ymax)
+        self.water.area.flow_velocity = u_array [np.newaxis, :, :]
+
+        # Property Water Depth # 
+        d_array = partial_reraster (self.map_nc, self.resolution, self.data_t, 'mesh2d_waterdepth', self.xmin, self.xmax, self.ymin, self.ymax)
+        self.water.area.water_depth = d_array [np.newaxis, :, :]
+        # creating boolean and clump fields describing swimmable and spawning grounds
         self.water.area.spawning_grounds = two_conditions_boolean_prop (self, self.water.area.water_depth, self.water.area.flow_velocity, self.spawning_conditions)
         self.water.area.swimmable = two_conditions_boolean_prop(self, self.water.area.water_depth, self.water.area.flow_velocity, self.adult_conditions)
-        # move them within their connected swimmable areas
         self.water.area.connected_swimmable = campo_clump (self, self.water.area.swimmable)
+
+        # Moving barbel and updating information about barbel movement: 
         movingX, movingY, spawning_area, travel_distance, has_spawned, movemode = move (self.water.area.connected_swimmable, self.water.area.swimmable, self.water.area.spawning_grounds, self.barbel.adults, self.water.area, self.currentTimeStep(), self.barbel.adults.has_spawned, self.radius, self.attitude) 
         # move agents over field: 
         barbel_coords = self.barbel.adults.get_space_domain(self.currentTimeStep())
@@ -132,6 +139,8 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         self.barbel.adults.movemode = movemode
         self.barbel.adults.swimdistance = self.barbel.adults.swimdistance + self.barbel.adults.justswam # keep on adding the swimming distance
 
+        # write to lue 
+        self.fishenv.write(self.currentTimeStep())
         end = datetime.datetime.now() - start
         print(f'ts:  {end}  write, timestep: {self.currentTimeStep()}')
 

@@ -39,7 +39,6 @@ class CommonMeuse():
         '''                                   
         self.t_data = np.arange (0, int(self.timesteps*(self.deltaT_mod/self.deltaT_data))+1, int((self.deltaT_mod / self.deltaT_data)))  
 
-
     def extent (self):
         '''
         Generates a CSV file in which we specify the domain as required by campo
@@ -100,6 +99,7 @@ class CommonMeuse():
         d_array = np.zeros ((self.timesteps+1, self.nrrows, self.nrcols))
         for t_mod, t in enumerate(self.t_data) : 
             d_array [t_mod,:,:] = partial_reraster (self.map_nc, self.resolution, t, 'mesh2d_waterdepth', self.xmin, self.xmax, self.ymin, self.ymax)
+            print (f'timestep: {t_mod} data accessed')
         d_add_dim = d_array [np.newaxis, :, :, :]
         return d_add_dim
 
