@@ -5,7 +5,7 @@ up_dir = in_dir.parent
 working = up_dir / 'working'
 sys.path.append(str(working))
 import model_config as cfg
-from barbel_model import FishEnvironment 
+from non_hydropeaking_model import FishEnvironment 
 from phenomena import CommonMeuse, Fish 
 import pcraster as pcr
 import pcraster.framework as pcrfw
@@ -20,7 +20,7 @@ commonMeuse.time_domain()
 # d = commonMeuse.waterdepth_array()
 
 if __name__ == "__main__":
-    myModel = FishEnvironment(cfg.input_d, cfg.output_f, cfg.map_nc, cfg.spatial_resolution, cfg.temporal_resolution, cfg.conversion_T, cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.nr_barbel, cfg.spawning_conditions, cfg.adult_conditions, cfg.dt_radius, cfg.attitude)
+    myModel = FishEnvironment(cfg.input_d, cfg.output_dir, cfg.map_nc, cfg.spatial_resolution, cfg.temporal_resolution, cfg.conversion_T, cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.nr_barbel, cfg.spawning_conditions, cfg.adult_conditions, cfg.dt_radius, cfg.attitude, cfg.filtersize, cfg.data_T_res)
     dynFrw = pcrfw.DynamicFramework(myModel, cfg.timesteps)
     dynFrw.run()
 

@@ -2,17 +2,19 @@
 from pathlib import Path 
 import numpy as np
 import math
+import os
 # directory hierarchies 
-working = Path.cwd()
-up_dir = working.parent
+cur = Path.cwd()
+up_dir = cur.parent
 input_d = up_dir / 'input'
-output_f = up_dir / "output/fish_environment.lue"
-output_dir = up_dir / "output/"
+
+output_dir = f'D:/thesis/non_hydropeaking/'
+working = up_dir / 'working'
 post_processing = up_dir / 'post_processing'
 file_name = 'fish_environment.lue'
-
 # data 
 map_nc = input_d / 'maas_data'/'new_fm_map.nc'
+loc_CSV = input_d / 'barbel_coords.csv'
 
 xmin,ymin =  173000, 322000, # 179000, 329000  #
 xmax,ymax =  193400, 353000 #180000, 331000 #
@@ -29,9 +31,12 @@ timesteps = math.floor(data_timesteps/(temporal_resolution/data_T_res))        #
 nr_barbel = 100
 
 # maximum radius of sensing and moving per day (cut up in one piece)
-radius = 3000 # maximal swimming per timestep
+radius = 10000 # maximal swimming per timestep
 dt_radius = temporal_resolution/24*radius 
-attitude = 'relaxed'
+attitude = 'focussed'
+
+# hydropeaking filter: 
+filtersize =24 # 24 hours
 
 # ranges of preferences 
 spawning_wd_min = 0.3 

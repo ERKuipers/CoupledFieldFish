@@ -19,14 +19,14 @@ import numpy as np
 from matplotlib import pyplot as plt
 from lifecycle_pref import two_conditions_boolean_prop, campo_clump
 from moving_to_coordinates import move
-from xugrid_func import partial_reraster
+from xugrid_func import MovingAverage_reraster
 
 #########
 # model #
 #########
 
-class FishEnvironment(pcrfw.DynamicModel, ):
-    def __init__(self, input_dir, output, map_nc, spatial_resolution, temporal_resolution, conversion_T, xmin, ymin, xmax, ymax, nrbarbels, spawning_conditions, adult_conditions, radius, attitude):
+class FishEnvironment(pcrfw.DynamicModel):
+    def __init__(self, input_dir, output, map_nc, spatial_resolution, temporal_resolution, conversion_T, xmin, ymin, xmax, ymax, nrbarbels, spawning_conditions, adult_conditions, radius, attitude, filtersize, data_DeltaTimestep):
         pcrfw.DynamicModel.__init__(self)
         # Framework requires a clone
         # set a dummy clone
@@ -46,6 +46,8 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         self.radius = radius
         self.attitude = attitude
         self.conversion_T = conversion_T # t to multiply the timesteps with to make it fit the timestep of the model 
+        self.filtersize = filtersize
+        self.data_DeltaTimestep = data_DeltaTimestep
     def initial(self):
         init_start = datetime.datetime.now()
         self.fishenv = campo.Campo(seed = 1)
@@ -61,7 +63,6 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         self.fishenv.create_dataset(f'{self.output}/fish_environment.lue')
         self.fishenv.set_time(start, unit, stepsize, self.nrTimeSteps())
         self.data_t = int(self.currentTimeStep()*self.conversion_T) 
-
         ###################
         # Phenomenon barbel #
         ###################
@@ -69,12 +70,13 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         self.barbel.set_epsg(28992)
         # Property Set barbel 
         self.barbel.add_property_set ('adults', self.input_dir / 'Fish.csv' ) # the water area always has the same spatial as well as temporal extent (it always exists)
+        
         self.barbel.adults.is_mobile = True
-    
-        # Properties for barbel
+     
+        # Property describing their movemode
         self.barbel.adults.movemode = 0
-        self.barbel.adults.movemode.is_dynamic = True 
-        self.barbel.adults.spawning_area = 0 
+        self.barbel.adults.movemode.is_dynamic = True # barbel age changes over time and barbel items are mobile  
+        self.barbel.adults.spawning_area = 0 # describing the total available spawning area for each individual barbel
         self.barbel.adults.spawning_area.is_dynamic = True 
         self.barbel.adults.has_spawned = 0 
         self.barbel.adults.has_spawned.is_dynamic = True
@@ -82,24 +84,22 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         self.barbel.adults.swimdistance.is_dynamic = True
         self.barbel.adults.surrounding = 0 
         self.barbel.adults.surrounding.is_dynamic = True
-
         ####################
         # Phenomenon Water #
         ####################
         self.water = self.fishenv.add_phenomenon ('water') # could we possibly reduce the first step of this? 
         self.water.set_epsg(28992)
         # Property Set Area # 
-        self.water.add_property_set ('area', self.input_dir / 'CommonMeuse.csv') # the water area always has the same spatial as well as temporal extent (it always exists) 
-        
-        # May come in handy
+        self.water.add_property_set ('area', self.input_dir / 'CommonMeuse.csv') # the water area always has the same spatial as well as temporal extent (it always exists)
+        print ('added the field as a domain')  
         self.water.area.zero = 0 
         self.water.area.one = 1
         #  Property Flow velocity # 
-        u_array = partial_reraster (self.map_nc, self.resolution, self.data_t, 'mesh2d_ucmag', self.xmin, self.xmax, self.ymin, self.ymax)
+        u_array = MovingAverage_reraster (self.map_nc, self.resolution, self.data_t, 'mesh2d_ucmag', self.xmin, self.xmax, self.ymin, self.ymax, self.filtersize, self.delta_t, self.data_DeltaTimestep)
         self.water.area.flow_velocity = u_array [np.newaxis, :, :]
         self.water.area.flow_velocity.is_dynamic = True
         # Property Water Depth # 
-        d_array = partial_reraster (self.map_nc, self.resolution, self.data_t, 'mesh2d_waterdepth', self.xmin, self.xmax, self.ymin, self.ymax)
+        d_array = MovingAverage_reraster (self.map_nc, self.resolution, self.data_t, 'mesh2d_waterdepth', self.xmin, self.xmax, self.ymin, self.ymax, self.filtersize, self.delta_t, self.data_DeltaTimestep)
         self.water.area.water_depth = d_array [np.newaxis, :, :]
         self.water.area.water_depth.is_dynamic = True
 
@@ -117,20 +117,20 @@ class FishEnvironment(pcrfw.DynamicModel, ):
         start = datetime.datetime.now()
         self.data_t = int(self.currentTimeStep()*self.conversion_T) # update the  given data timestep with updated current timestep as by the pcraster framework 
         # first setting environmental variables, then positioning the barbels as a response to the alternation in habitat
-        u_array = partial_reraster (self.map_nc, self.resolution, self.data_t, 'mesh2d_ucmag', self.xmin, self.xmax, self.ymin, self.ymax)
+        u_array = MovingAverage_reraster (self.map_nc, self.resolution, self.data_t, 'mesh2d_ucmag', self.xmin, self.xmax, self.ymin, self.ymax, self.filtersize, self.delta_t, self.data_DeltaTimestep)
         self.water.area.flow_velocity = u_array [np.newaxis, :, :]
 
         # Property Water Depth # 
-        d_array = partial_reraster (self.map_nc, self.resolution, self.data_t, 'mesh2d_waterdepth', self.xmin, self.xmax, self.ymin, self.ymax)
+        d_array = MovingAverage_reraster (self.map_nc, self.resolution, self.data_t, 'mesh2d_waterdepth', self.xmin, self.xmax, self.ymin, self.ymax, self.filtersize, self.delta_t, self.data_DeltaTimestep)
         self.water.area.water_depth = d_array [np.newaxis, :, :]
-        # Creating boolean and clump fields describing swimmable and spawning grounds
+        # creating boolean and clump fields describing swimmable and spawning grounds
         self.water.area.spawning_grounds = two_conditions_boolean_prop (self, self.water.area.water_depth, self.water.area.flow_velocity, self.spawning_conditions)
         self.water.area.swimmable = two_conditions_boolean_prop(self, self.water.area.water_depth, self.water.area.flow_velocity, self.adult_conditions)
         self.water.area.connected_swimmable = campo_clump (self, self.water.area.swimmable)
 
-        # Moving barbel and getting information about barbel movement: 
+        # Moving barbel and updating information about barbel movement: 
         movingX, movingY, spawning_area, travel_distance, has_spawned, movemode = move (self.water.area.connected_swimmable, self.water.area.swimmable, self.water.area.spawning_grounds, self.barbel.adults, self.water.area, self.currentTimeStep(), self.barbel.adults.has_spawned, self.radius, self.attitude) 
-        # Move agents over field: 
+        # move agents over field: 
         barbel_coords = self.barbel.adults.get_space_domain(self.currentTimeStep())
         barbel_coords.xcoord = movingX
         barbel_coords.ycoord = movingY

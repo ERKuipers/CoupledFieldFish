@@ -6,7 +6,7 @@ import xarray as xr
 import xugrid as xu 
 import pandas as pd
 import numpy as np
-import os
+
 # rasterize function
 def ugrid_rasterize (ugrid_filelocation, resolution, timestep, var):
     '''
@@ -42,21 +42,26 @@ def partial_reraster (ugrid_filelocation, resolution, timestep, var,xmin,xmax,ym
     '''
     Parameters
     ----------
-    ugrid_filelocation : location of .nc file 
-    resolution : resolution to rasterize variable in 
-    timestep 
-    var = variable to get
+    ugrid_filelocation : location of .nc file (Type: String, Path)
+    resolution : resolution to rasterize variable in (Type: Integer)
+    Timestep : timestep of the dataset to rasterize (Type: Integer)
+    Var: Variable to get, 'mesh2d_ucmag' for u and 'mesh2d_waterdepth' for d (Type: String)
+    Xmin: minimal X-coordinate 
+    Xmax: maximum X-coordinate
+    Ymin: minimal Y-coordinate
+    Ymax: maximum Y-coordinate 
 
     Returns
     -------
-    xr_raster : xarray data array with spatial extent for that array 
+    xr_raster : xarray data array within the spatial extent given (Type: np.Array)
 
     '''
     ds = xr.open_dataset(ugrid_filelocation)
     uds = (xu.UgridDataset(ds))
+    # when not sure what variable to get, run following line to print variable name:
     # print(uds.data_vars)
 
-    x_coords = np.arange(xmin,xmax, resolution)     # resolution becomes the cell length of the raster.
+    x_coords = np.arange(xmin,xmax, resolution)  # resolution becomes the cell length of the raster.
     y_coords = np.arange(ymin,ymax,resolution)
 
     da_clone = xr.DataArray(data=np.ones((len(x_coords), len(y_coords))), 
@@ -71,6 +76,6 @@ def partial_reraster (ugrid_filelocation, resolution, timestep, var,xmin,xmax,ym
     # make from long raster format with columns x,y and variable the indx x, columns y and the variable the value
     reshaped = pd_xy.pivot(index = ['y'], columns = ['x'], values=str(var))  
     raster_array_rev = reshaped.to_numpy()
-    raster_array = np.flip (raster_array_rev, axis = 0)
+    raster_array = np.flip (raster_array_rev, axis = 0) # needs to be flipped in order to show up correctly 
     return raster_array
 

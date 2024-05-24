@@ -107,8 +107,9 @@ def move_directed (field_pset, dest_boolean_fieldprop, boolean_clump_fieldprop, 
     closest_destX, closest_destY, dist1 = find_closest_dest(field_pset, dest_boolean_fieldprop, point_pset, pidx)
     # from this pixel, find closest clump pixel , which will be in the right direction 
     xcoord, ycoord, dist2 = find_closest_dest(field_pset, boolean_clump_fieldprop, closest_destX, closest_destY)
+
     initialX = point_pset.space_domain.xcoord[pidx]
-    initialY = point_pset.space_domain.xcoord[pidx]
+    initialY = point_pset.space_domain.ycoord[pidx]
     travel_distance = np.sqrt((xcoord - initialX)**2 +(ycoord - initialY)**2)
     return xcoord, ycoord, travel_distance
 
@@ -139,10 +140,16 @@ def move (clump_fieldprop, boolean_fieldprop, dest_fieldprop, point_pset, field_
     travel_distances = np.zeros ((nragents))
     movemode = np.zeros ((nragents))
     spawns = np.hstack(list(has_spawned_pointprop.values().values.values())) # creating an numpy array while using the property values
-    # available_pix = zonal_values_to_feature (point_pset, field_pset, clump_fieldprop, dest_fieldprop, 'sum')
-
+     # really need to do this for all given that
+    
     # this needs to be implemented from the fieldprop so that it does not get overwritten by a 0 value in a next timestep
     for pidx, ID in enumerate (agent_clumpID.values()):
+        mask = generate_mask (point_pset, pidx, field_pset, radius) # check, is now flipped
+        fieldprop_boolean_value = np.where (clump_fieldprop.values()[0] == ID, 1, 0) # the boolean map describing the clump for each individual fish
+        reachable_array = np.multiply (fieldprop_boolean_value, mask) # reachable within clump, works 
+        array_dest = dest_fieldprop.values()[0] # the eventual destination, boolean map of it
+        prob_destination = np.multiply (reachable_array, array_dest) 
+        available_area [pidx] = np.sum(prob_destination)*(resolution**2)
         if timestep == 1: # first moving the 
             xcoord_array, ycoord_array = randommove_to_boolean (clump_fieldprop, resolution, xmin, ymin, 1)
             xcoords [pidx] = xcoord_array.item()
@@ -156,17 +163,10 @@ def move (clump_fieldprop, boolean_fieldprop, dest_fieldprop, point_pset, field_
             # print (f'been there, done that (the spawning), {pidx} out')
    
         elif ID == 0:# dryswimming 
-            mask = generate_mask (point_pset, pidx, field_pset, radius) # check, is now flipped
-            fieldprop_boolean_value = np.where (clump_fieldprop.values()[0] == ID, 1, 0) # the boolean map describing the clump for each individual fish
-            # mask always shows correct map 
-            # clump fieldprop also shows correct map 
-            # fieldprop_boolean_value does not show correct map when plotted together with mask, and results in 0 values when multiplied 
-            reachable_array = np.multiply (fieldprop_boolean_value, mask) # reachable within clump, works 
             # find the closest non-dry land to go to 
             movemode [pidx] = 2 # nearest destination 
             # print (f'I, {pidx}, am dryswimming! help me get back')
             swim_array = boolean_fieldprop.values()[0]
-
             #reachable and swimmable within buffer, not taking into account own clump:
             masked_swimmable = np.multiply(swim_array, mask)
             
@@ -175,27 +175,19 @@ def move (clump_fieldprop, boolean_fieldprop, dest_fieldprop, point_pset, field_
             else: # if there is no swimmable area in the direct vicinity
                 xcoords [pidx], ycoords [pidx], travel_distances [pidx] = find_closest_dest (field_pset, swim_array, point_pset, pidx)
         else: 
-            mask = generate_mask (point_pset, pidx, field_pset, radius) # check, is now flipped
-            fieldprop_boolean_value = np.where (clump_fieldprop.values()[0] == ID, 1, 0) # the boolean map describing the clump for each individual fish
-            # mask always shows correct map 
-            # clump fieldprop also shows correct map 
-            # fieldprop_boolean_value does not show correct map when plotted together with mask, and results in 0 values when multiplied 
-            reachable_array = np.multiply (fieldprop_boolean_value, mask) # reachable within clump, works 
-            array_dest = dest_fieldprop.values()[0] # the eventual destination, boolean map of it
-            prob_destination = np.multiply (reachable_array, array_dest) 
-            available_area [pidx] = np.sum(prob_destination)*(resolution**2)# on non-swimmable area, just the closest piece of swimmable area 
-            # the available area per barbel in unit^2 as in the data 
             # if theres no spawning in proximate area, move in the direction of the closest
             if available_area[pidx] == 0: # has not spawned yet but no available area within clump and radius
                 movemode [pidx] = 3 # directed move
                 # print (f'I {pidx} rate the spawning availability over here 0/5 stars')
                 if fishbehaviour == 'focussed': # distuingishing the different 
                     xcoords [pidx], ycoords [pidx], travel_distances [pidx] = move_directed (field_pset, dest_fieldprop, reachable_array, point_pset, pidx)
-                if fishbehaviour == 'wandering':
+                elif fishbehaviour == 'wandering':
                     xcoord_array, ycoord_array = randommove_to_boolean (reachable_array, resolution, xmin, ymin, 1)
                     xcoords [pidx] = xcoord_array.item()
                     ycoords [pidx] = ycoord_array.item()
                     travel_distances [pidx] = np.sqrt ((point_pset.space_domain.xcoord[pidx]-xcoords[pidx])**2 + (point_pset.space_domain.ycoord[pidx]-ycoords[pidx])**2)
+                else: 
+                    raise ValueError ('Fishbehaviour can be either focussed or wandering')
             else: # spawning:
                 # generating destination maps, moving there
                 xcoord_array, ycoord_array = randommove_to_boolean (prob_destination, resolution, xmin, ymin, 1)

@@ -52,7 +52,7 @@ for t_agent in dyn_timevector:
 print (len(percentage_barbelAcces))
 print (len(timevector))
 print (len(total_spawnarea))
-percentage_barbelAcces= np.concatenate(([0],percentage_barbelAcces)) # should have a number but strangely enough no output
+# percentage_barbelAcces= np.concatenate(([0],percentage_barbelAcces)) # should have a number but strangely enough no output
 ## showing total amount of available area and the accessible area
 fig, ax1 = plt.subplots()
 

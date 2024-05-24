@@ -7,7 +7,6 @@ import xugrid as xu
 import pandas as pd
 import numpy as np
 import os
-import math
 # rasterize function
 def ugrid_rasterize (ugrid_filelocation, resolution, timestep, var):
     '''
@@ -75,38 +74,3 @@ def partial_reraster (ugrid_filelocation, resolution, timestep, var,xmin,xmax,ym
     raster_array = np.flip (raster_array_rev, axis = 0)
     return raster_array
 
-def MovingAverage_reraster (ugrid_filelocation, resolution, timestep, var,xmin,xmax,ymin,ymax, filtersize, modelTemporalResolution, Data_DeltaTimestep):
-    '''
-    Parameters
-    ----------
-    ugrid_filelocation : location of .nc file 
-    resolution : resolution to rasterize variable in 
-    timestep: 
-    filtersize: in timeunit given, so e.g. 24 hours is a running average over 24 hours
-    var = variable to get
-
-    Returns
-    -------
-    xr_raster : xarray data array with spatial extent for that array 
-
-    '''
-    # e.g. the half hour deltaTs for a 24 hour filtersize at timestep (data) = 62, with 2 hour model interval: should generate 12 steps 
-    # (62-24/0.5/2)=38, 42, 46, 50, 54, 58, 62, 66, 70, 74, 78, 82,(62+24/0.5/2)=86
-    arrays_idxs_ToAverageOver = np.arange ((timestep-((filtersize/Data_DeltaTimestep)/2)),(timestep+((filtersize/Data_DeltaTimestep)/2)+1), (modelTemporalResolution/Data_DeltaTimestep))
-    
-    
-    nr_cols = math.floor((xmax - xmin)/ resolution)
-    nr_rows = math.floor((ymax - ymin)/resolution)
-    running_sum = np.zeros ((nr_rows, nr_cols))
-    count = 0
-    for t in arrays_idxs_ToAverageOver: 
-        if t<1:
-            timestep_nr=1
-        elif t>2929: # im really sorry for this hardcode i will fix it later
-            timestep_nr=2929
-        else:
-            timestep_nr= int(t)
-        running_sum += partial_reraster (ugrid_filelocation, resolution, timestep_nr, var, xmin, xmax, ymin, ymax)
-        count += 1
-    MovingAverage_raster = running_sum / count  
-    return MovingAverage_raster

@@ -10,7 +10,6 @@ gdal.UseExceptions()
 import math
 import numpy as np
 
-import campo
 from campo.points import Points
 from campo.areas import Areas
 from campo.property import Property

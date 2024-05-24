@@ -1,8 +1,6 @@
 {
     "python.analysis.typeCheckingMode": "off",
     "python.analysis.extraPaths": [
-        "./working",
-        "./input",
-        "./post_processing"
+        "./working"
     ]
 }
