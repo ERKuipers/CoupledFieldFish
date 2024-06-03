@@ -1,6 +1,6 @@
 #%%
 from pathlib import Path
-print ('started')
+
 import os 
 import sys
 cur_dir = Path.cwd()
@@ -11,11 +11,10 @@ sys.path.append(f'{working}')
 sys.path.append(str(post_processing))
 import model_config as cfg
 import lue.data_model as ldm
-print ('is this whats taking long?')
 import campo
 import numpy as np
 import csv
-print ('imported')
+
 
 class Export(): 
     def __init__ (self, output_d, timesteps, spatial_resolution): 
@@ -25,8 +24,8 @@ class Export():
         self.coords_timevector = np.arange (1,(int(timesteps)+1),1)
         self.spatial_resolution = spatial_resolution
         self.fish_env = f'{self.output_dir}/fish_environment.lue'
-        print ('opening_data')
         self.dataset  = ldm.open_dataset(f"{self.fish_env}")
+        
     def Barbel (self): 
         self.movemode_df = campo.dataframe.select (self.dataset.barbel, property_names = [f'movemode'])
         self.has_spawned_df = campo.dataframe.select(self.dataset.barbel, property_names =[f'has_spawned'])
@@ -91,22 +90,20 @@ class Export():
             # Create a CSV writer object
             csv_writer = csv.writer(f, delimiter=',',quoting=csv.QUOTE_MINIMAL)
             csv_writer.writerow(nr_clumps)
-
-
-    def CommonMeuse_tif(self): 
+    def CommonMeuse_spawntif(self): 
+        spawn_df = campo.dataframe.select(self.dataset.water, property_names=[f'spawning_grounds'])
         for t in self.dyn_timevector:
-                #change it to make sure outputs are stored 
-            flow_velocity_df = campo.dataframe.select(self.dataset.water, property_names=[f'flow_velocity']) # space type = static_diff_field but should be dynamic field 
-            # no space type distinction, however proper shape
-            spawn_df = campo.dataframe.select(self.dataset.water, property_names=[f'spawning_grounds'])
-            depth_df = campo.dataframe.select(self.dataset.water, property_names=[f'water_depth'])
-            swim_df = campo.dataframe.select(self.dataset.water, property_names=[f'swimmable'])
-            connected_swim_df = campo.dataframe.select (self.dataset.water, property_names=[f'connected_swimmable'])
-            # ampo.to_geotiff(swimraster, (f"{self.output_dir}/swim_{t+1}.tif"), 'EPSG:28992') # writing t+1 because the 0 timestep is the first (see notes 26/3)
-            # campo.to_geotiff(raster, (f"{self.output_dir}/flow_{t+1}.tif"), 'EPSG:28992')
-            # campo.to_geotiff(spawnraster, (f'{self.output_dir}/spawn_{t+1}.tif'), 'EPSG:28992')
-            # campo.to_geotiff(depthraster, (f'{self.output_dir}/depth_{t+1}.tif'), 'EPSG:28992')
-            # campo.to_geotiff(connected_swimraster, (f"{self.output_dir}/connected_swim_{t+1}.tif"), 'EPSG:28992')
+            # let op : neemt alleen laatste key mee!!!!! als df 
+            spawnraster = spawn_df["water"]["area"]['spawning_grounds'][0][t] 
+            campo.to_geotiff(spawnraster, (f'{self.output_dir}/spawn_{t+1}.tif'), 'EPSG:28992')
+
+    def CommonMeuse_connectedswimtif (self):
+        connected_swim_df = campo.dataframe.select (self.dataset.water, property_names=[f'connected_swimmable'])
+        for t in self.dyn_timevector:
+            # let op : neemt alleen laatste key mee!!!!! als df 
+            connected_swimraster = connected_swim_df["water"]["area"]['connected_swimmable'][0][t] 
+
+            campo.to_geotiff(connected_swimraster, (f"{self.output_dir}/connected_swim_{t+1}.tif"), 'EPSG:28992')
 
     def Barbel_gpkg(self): 
         for t_coords in self.coords_timevector:
@@ -122,6 +119,10 @@ class Export():
 
 if __name__ == "__main__":
    print('exporting')
-   export = Export(f'D:/thesis/sensitivity_output/focussed_homebody_broad_range', cfg.timesteps, cfg.spatial_resolution)
+   export = Export(f'D:/thesis/non_hydropeaking/focussed_traveller_initial_range', cfg.timesteps, cfg.spatial_resolution)
    print ('exporting spawn csvs...:')
-   export.CommonMeuse_swimcsv()
+   #export.Barbel()
+   #export.Barbel_csv()
+   export.CommonMeuse_clumpcsv()
+   export.CommonMeuse_spawncsv()
+   #export.CommonMeuse_swimcsv()

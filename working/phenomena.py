@@ -5,13 +5,13 @@ working = Path.cwd()
 up_dir = working.parent 
 pre_processing_dir = up_dir / 'pre_processing/'
 sys.path.append(pre_processing_dir)
-from xugrid_func import partial_reraster
+from xugrid_func import partial_reraster, MovingAverage_reraster
 import numpy as np 
 import random
 import math 
 import csv 
 class CommonMeuse(): 
-    def __init__ (self, xmin, ymin, xmax, ymax, resolution, map_nc, timesteps, deltaT_mod, deltaT_data, input_dir):
+    def __init__ (self, xmin, ymin, xmax, ymax, resolution, map_nc, timesteps, deltaT_mod, deltaT_data, input_dir, filtersize, modelTemporalResolution, Data_DeltaTimestep):
         '''
         Class describing the domain over which to model in relation to spatial data given for the Common Meuse. 
 
@@ -31,7 +31,9 @@ class CommonMeuse():
         self.deltaT_data = deltaT_data
         self.input_dir = input_dir
         self.t_data = None  # timestep vector for data to be defined in time_domain function 
-
+        self.filtersize = filtersize 
+        self.modelTemporalResolution = modelTemporalResolution
+        self.Data_DeltaTimestep = Data_DeltaTimestep
     def time_domain (self):
         '''
         Constructing a timedomain for the model in relation to the input data 
@@ -67,7 +69,6 @@ class CommonMeuse():
             self.row_discr = xdiscr , but no should be nr of y!!!!!!!! 
             self.col_discr = ydiscr
         '''
-        
         self.nrcols = int(math.fabs (self.xmax - self.xmin) / self.resolution)
         self.nrrows = int(math.fabs (self.ymax - self.ymin) / self.resolution)
         with open(self.input_dir / 'CommonMeuse.csv', 'w') as content:
@@ -86,22 +87,19 @@ class CommonMeuse():
         the array is +1 larger than the nr of timesteps to account for the initial timestep = 0 , 
         over which the nr of timesteps is started to count in the dynamic section with t = 1 
         '''
-        u_array = np.zeros ((self.timesteps+1, self.nrrows, self.nrcols )) 
-        t_mod = 0 
-        for t in self.t_data:
-            u_array [t_mod,:,:] = partial_reraster (self.map_nc, self.resolution, t, 'mesh2d_ucmag', self.xmin, self.xmax, self.ymin, self.ymax)
-            t_mod += 1 
-        u_add_dim = u_array [np.newaxis, :, :, :]
-        return u_add_dim 
+        u_array = np.zeros (( self.nrrows, self.nrcols )) 
+        for t_mod, t in enumerate(self.t_data):
+            u_array= MovingAverage_reraster(self.map_nc, self.resolution, t, 'mesh2d_ucmag', self.xmin, self.xmax, self.ymin, self.ymax, self.filtersize, self.modelTemporalResolution, self.Data_DeltaTimestep)
+            np.savetxt(f'{self.input_dir}/flowvelocity_{t_mod}.csv', u_array, delimiter=',', fmt='%s')
+            print (f'timestep: {t_mod}  flow data accessed')
+
     
     def waterdepth_array (self): 
         '''See docstring about flow velocity array '''
-        d_array = np.zeros ((self.timesteps+1, self.nrrows, self.nrcols))
+        d_array = np.zeros ((self.nrrows, self.nrcols))
         for t_mod, t in enumerate(self.t_data) : 
-            d_array [t_mod,:,:] = partial_reraster (self.map_nc, self.resolution, t, 'mesh2d_waterdepth', self.xmin, self.xmax, self.ymin, self.ymax)
-            print (f'timestep: {t_mod} data accessed')
-        d_add_dim = d_array [np.newaxis, :, :, :]
-        return d_add_dim
+            d_array  = MovingAverage_reraster (self.map_nc, self.resolution, t, 'mesh2d_waterdepth', self.xmin, self.xmax, self.ymin, self.ymax, self.filtersize, self.modelTemporalResolution, self.Data_DeltaTimestep)
+            np.savetxt(f'{self.input_dir}/waterdepth_{t_mod}.csv', d_array, delimiter=',', fmt='%s')
 
 
 class Fish(): 

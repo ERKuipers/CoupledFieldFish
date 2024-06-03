@@ -19,11 +19,11 @@ from phenomena import CommonMeuse, Fish
 import pcraster 
 import pcraster.framework as pcrfw 
 
-commonBarbel = Fish(cfg.nr_barbel, cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.input_d)
-commonMeuse = CommonMeuse (cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.spatial_resolution, cfg.map_nc, cfg.timesteps, cfg.temporal_resolution, cfg.data_T_res, cfg.input_d)
-commonMeuse.extent() # generates a csv file describing the extent of the Meuse
-commonBarbel.extent() # generetes a csv file describing coordinatesets for each barbel
-commonMeuse.time_domain()
+# commonBarbel = Fish(cfg.nr_barbel, cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.input_d)
+# commonMeuse = CommonMeuse (cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.spatial_resolution, cfg.map_nc, cfg.timesteps, cfg.temporal_resolution, cfg.data_T_res, cfg.input_d)
+# commonMeuse.extent() # generates a csv file describing the extent of the Meuse
+# commonBarbel.extent() # generetes a csv file describing coordinatesets for each barbel
+# commonMeuse.time_domain()
 for fishadventuring in cfg.fish_exploring.keys():
     for fishattitude in cfg.attitude.keys():
         for spawningrange in cfg.spawning_conditions.keys():
@@ -31,15 +31,12 @@ for fishadventuring in cfg.fish_exploring.keys():
             folder_name = f"{fishattitude}_{fishadventuring}_{spawningrange}"
             folder_path = os.path.join(cfg.sens_output_dir, folder_name)
             os.makedirs(folder_path, exist_ok=True)
-            #if __name__ == "__main__":
-            if folder_name == f'focussed_traveller_initial_range' or folder_name == f'wandering_traveller_initial_range' or folder_name == f'wandering_traveller_broad_range':
-                continue
-            # print (f'running the config: {fishattitude}_{fishadventuring}_{spawningrange}')
-            # myModel = FishEnvironment(cfg.input_d, folder_path, cfg.map_nc, cfg.spatial_resolution, cfg.temporal_resolution, cfg.conversion_T, cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.nr_barbel, cfg.spawning_conditions[f'{spawningrange}'], cfg.adult_conditions, cfg.fish_exploring[f'{fishadventuring}'], cfg.attitude[f'{fishattitude}'])
-            # dynFrw = pcrfw.DynamicFramework(myModel, cfg.timesteps)
-            # dynFrw.run()
-            # exporting the results to csvs, gpgks and tifs
-            else:
+            if folder_name == 'wandering_traveller_broad_range':
+                # print (f'running the config: {fishattitude}_{fishadventuring}_{spawningrange}')
+                # myModel = FishEnvironment(cfg.input_d, folder_path, cfg.map_nc, cfg.spatial_resolution, cfg.temporal_resolution, cfg.conversion_T, cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.nr_barbel, cfg.spawning_conditions[f'{spawningrange}'], cfg.adult_conditions, cfg.fish_exploring[f'{fishadventuring}'], cfg.attitude[f'{fishattitude}'])
+                # dynFrw = pcrfw.DynamicFramework(myModel, cfg.timesteps)
+                # dynFrw.run()
+                # exporting the results to csvs, gpgks and tifs
                 print (f'exporting the config:{fishattitude}_{fishadventuring}_{spawningrange}')
                 export = Export(folder_path, cfg.timesteps, cfg.spatial_resolution)
                 # export.Barbel()
@@ -47,9 +44,10 @@ for fishadventuring in cfg.fish_exploring.keys():
                 # export.Barbel_csv()
                 # print ('exporting clump csvs...:')
                 # export.CommonMeuse_clumpcsv()
-                export.Barbel_gpkg()
+                export.Barbel()
                 #print ('exporting spawn csvs...:')
                 #export.CommonMeuse_spawncsv()
-                # export.Barbel_gpkg()
-                # export.CommonMeuse_tif()
+                export.Barbel_gpkg()
+                export.CommonMeuse_spawntif()
+                export.CommonMeuse_connectedswimtif()
                 print (f'done with the config: {fishattitude}_{fishadventuring}_{spawningrange}')

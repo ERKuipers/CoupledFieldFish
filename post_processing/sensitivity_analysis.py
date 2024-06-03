@@ -11,9 +11,10 @@ import matplotlib.lines as mlines
 import seaborn as sns 
 from matplotlib.colors import ListedColormap
 import math
-cur = Path.cwd()
+cur = Path("C:/Users/6402240/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/CoupledFieldFish/working") #Path.cwd()
 
-up_dir = cur.parent 
+up_dir = cur.parent
+
 working = f'{up_dir}/working'
 pre_processing = f'{up_dir}/pre_processing'
 post_processing = f'{up_dir}/post_processing'
@@ -64,7 +65,7 @@ for fishadventuring in cfg.fish_exploring.keys():
             SpawnersDistances [b,:]= np.multiply(Spawners_df.to_numpy()[-1,:],distance_df.to_numpy()[-1,:]) 
             modesAccessed [b,0] = np.sum (MoveMode_df.to_numpy()==2)
             modesAccessed [b,1] = np.sum (MoveMode_df.to_numpy()==3)
-            modesAccessed [b,2] = np.sum (MoveMode_df.to_numpy()==4)
+            modesAccessed [b,2] = np.divide(modesAccessed [b,0],modesAccessed[b,1])*100 
             # modesAccessed [b,3] = np.sum (MoveMode_df.to_numpy()==1)
             sumSpawners_overTime [b,:]= np.sum (Spawners_df.to_numpy(), axis=1)
             Barbelsw_Access_overTime [b,:] = np.sum (BarbelAccess_toSpawningArea_df.to_numpy() > 0, axis=1)
@@ -72,7 +73,7 @@ for fishadventuring in cfg.fish_exploring.keys():
             b +=1
 
 # categorical so pd dataframe: 
-Column_MoveMode = ['Nearest', 'Directed/Random', 'Destination'] 
+Column_MoveMode = ['Nearest', 'Directed/Random', 'Relative nearest'] 
 Row_Configuration = folder_names          
 modesAccessed_df = pd.DataFrame(modesAccessed, index=Row_Configuration, columns=Column_MoveMode)
 SpawnersDistances_df = pd.DataFrame (SpawnersDistances, index=Row_Configuration)
@@ -101,7 +102,7 @@ plt.gca().xaxis.set_major_locator(mdates.AutoDateLocator())
 plt.gcf().autofmt_xdate()
 plt.xticks(fontsize=8)
 plt.xlabel('Date', fontsize=10)
-plt.ylabel('Spawning succes of population (%)', fontsize=10)
+plt.ylabel('Population\'s spawning success (%)', fontsize=10)
 # plt.title('Spawning success over time considering different types of barbel behaviour')
 plt.legend(loc='best', fontsize='small', frameon=True, fancybox=True, shadow=False)
 plt.tight_layout()
@@ -116,7 +117,7 @@ legend_entries = []
 for ax, line_indices in zip(axs.flatten(), lines_per_subplot):
     for index in line_indices:
         ax.plot(datetime_vector, sumSpawners_overTime[index, :], 
-                label=f'{folder_names[index]}', linestyle=['--', '-'][index % 2], 
+                label=f'{folder_names[index]}', linestyle=['-', '--'][index % 2], 
                 color=colors[math.floor(index/2)])  # Cycle through colors if needed
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
     ax.xaxis.set_major_locator(mdates.AutoDateLocator())
@@ -124,11 +125,11 @@ for ax, line_indices in zip(axs.flatten(), lines_per_subplot):
     ax.set_xlabel('Date', fontsize=14)
 
     if line_indices ==[0,1] or line_indices ==[4,5]:
-        ax.set_ylabel('Spawning success of population (%)', fontsize=14) # only set y axis label for the most right plots
+        ax.set_ylabel('Population\'s spawning success (%)', fontsize=13) # only set y axis label for the most right plots
     else: 
         ax.set_yticklabels([]) # remove tick labels for the most right plots  
     ax.set_ylim([0,100])
-    ax.legend()
+    ax.legend(fontsize='x-large')
 
 
 # Adjust layout to accommodate subplots
@@ -154,11 +155,11 @@ for ax, line_indices in zip(axs.flatten(), lines_per_subplot):
     ax.set_xlabel('Date', fontsize=14)
 
     if line_indices ==[0,2] or line_indices ==[4,6]:
-        ax.set_ylabel('Spawning success of population (%)', fontsize=14) # only set y axis label for the most right plots
+        ax.set_ylabel('Population\'s spawning success (%)', fontsize=13) # only set y axis label for the most right plots
     else: 
         ax.set_yticklabels([]) # remove tick labels for the most right plots  
     ax.set_ylim([0,100])
-    ax.legend()
+    ax.legend(fontsize='x-large')
 fig.tight_layout()
 plt.gcf().autofmt_xdate() # Rotate dates for better readability
 plt.show()
@@ -180,25 +181,32 @@ for ax, line_indices in zip(axs.flatten(), lines_per_subplot):
     ax.set_xlabel('Date', fontsize=14)
 
     if line_indices ==[0,4] or line_indices ==[2,6]:
-        ax.set_ylabel('Spawning success of population (%)', fontsize=14) # only set y axis label for the most right plots
+        ax.set_ylabel('Population\'s spawning success (%)', fontsize=13) # only set y axis label for the most right plots
     else: 
         ax.set_yticklabels([]) # remove tick labels for the most right plots  
     ax.set_ylim([0,100])
-    ax.legend()
-
+    ax.legend(fontsize='x-large')
 # Adjust layout to accommodate subplots
-
 fig.tight_layout()
 plt.gcf().autofmt_xdate() # Rotate dates for better readability
 plt.show()
-
-plt.figure(3) # Movement modes accessed by the barbels in different configurations
-ax = modesAccessed_df.plot(kind='bar', stacked=True, figsize=(10, 7), cmap=colormap)
+print (modesAccessed_df.columns)
+fig, ax1 = plt.subplots(figsize=(10, 7)) # Movement modes accessed by the barbels in different configurations
+ax1 = modesAccessed_df[['Nearest', 'Directed/Random']].plot(kind='bar', ax=ax1, figsize=(10, 7), cmap=colormap, position=0, width = 0.4)
 # Movement modes accessed by the barbels in different configurations 
-ax.set_xlabel('Configurations')
-ax.set_ylabel('Number of Times Accessed of movement modes')
+ax1.tick_params(axis='x', labelsize=12, labelrotation=45)
+for tick in ax1.get_xticklabels():
+    tick.set_horizontalalignment('right')
+ax1.set_xlabel('Configurations')
+ax1.set_ylabel('Times movement mode used', fontsize=13)
+
+ax2 = ax1.twinx()
+
+modesAccessed_df[['Relative nearest']].plot(kind='bar', ax=ax2, figsize=(10, 7), color='orange', position=-2, width = 0.2)
+ax2.set_ylabel('Relative use of neareast movement mode (%)', fontsize=13)
+ax2.legend(loc='upper right')
 # Adding legend
-plt.legend(title='Movement Modes', bbox_to_anchor=(1.05, 1), loc='upper left')
+ax1.legend(title='Movement Modes', loc='upper left')
 plt.tight_layout()
 plt.show()
 
