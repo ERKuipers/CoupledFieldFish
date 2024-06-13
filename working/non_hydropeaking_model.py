@@ -108,7 +108,7 @@ class FishEnvironment(pcrfw.DynamicModel):
         self.water.area.spawning_grounds.is_dynamic = True
         self.water.area.swimmable = two_conditions_boolean_prop (self, self.water.area.water_depth, self.water.area.flow_velocity, self.adult_conditions)
         self.water.area.swimmable.is_dynamic = True 
-        self.water.area.connected_swimmable = campo_clump (self, self.water.area.swimmable)
+        self.water.area.connected_swimmable = campo_clump (self.water.area.swimmable, self.water.area)
         self.water.area.connected_swimmable.is_dynamic = True 
         self.fishenv.write() # write the lue dataset
         end = datetime.datetime.now() - init_start # print the run duration
@@ -127,9 +127,10 @@ class FishEnvironment(pcrfw.DynamicModel):
         # creating boolean and clump fields describing swimmable and spawning grounds
         self.water.area.spawning_grounds = two_conditions_boolean_prop (self, self.water.area.water_depth, self.water.area.flow_velocity, self.spawning_conditions)
         self.water.area.swimmable = two_conditions_boolean_prop(self, self.water.area.water_depth, self.water.area.flow_velocity, self.adult_conditions)
-        self.water.area.connected_swimmable = campo_clump (self, self.water.area.swimmable)
+        self.water.area.connected_swimmable = campo_clump (self.water.area.swimmable, self.water.area)
 
         # Moving barbel and updating information about barbel movement: 
+
         movingX, movingY, spawning_area, travel_distance, has_spawned, movemode = move (self.water.area.connected_swimmable, self.water.area.swimmable, self.water.area.spawning_grounds, self.barbel.adults, self.water.area, self.currentTimeStep(), self.barbel.adults.has_spawned, self.radius, self.attitude) 
         # move agents over field: 
         barbel_coords = self.barbel.adults.get_space_domain(self.currentTimeStep())

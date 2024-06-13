@@ -133,7 +133,7 @@ def move (clump_fieldprop, boolean_fieldprop, dest_fieldprop, point_pset, field_
 
     agent_clumpID = raster_values_to_feature (point_pset, field_pset, clump_fieldprop) # property describing the clump ID where the agent is 
     nragents = len (has_spawned_pointprop.values().values.values())
-    
+
     xcoords = np.zeros ((nragents))
     ycoords = np.zeros ((nragents))
     available_area = np.zeros((nragents))

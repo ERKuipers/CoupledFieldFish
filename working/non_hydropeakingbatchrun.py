@@ -28,32 +28,24 @@ if __name__ == "__main__":
     # commonMeuse.waterdepth_array()
     for fishadventuring in cfg.fish_exploring.keys():
         for fishattitude in cfg.attitude.keys():
-            for spawningrange in cfg.spawning_conditions.keys():
-                # Create a folder for this parameter combination
-                folder_name = f"{fishattitude}_{fishadventuring}_{spawningrange}"
-                folder_path = os.path.join(cfg.sens_output_dir, folder_name)
-                os.makedirs(folder_path, exist_ok=True)
-                if folder_name == 'wandering_homebody_initial_range':
-                    continue 
-                else:  
+            if fishattitude == 'wandering':
+                continue
+            else:
+                for spawningrange in cfg.spawning_conditions.keys():
+                    # Create a folder for this parameter combination
+                    folder_name = f"{fishattitude}_{fishadventuring}_{spawningrange}"
+                    folder_path = os.path.join(cfg.sens_output_dir, folder_name)
+                    os.makedirs(folder_path, exist_ok=True)
                     print (f'running the config: {fishattitude}_{fishadventuring}_{spawningrange}')
-                    # myModel = FishEnvironment(cfg.input_d, folder_path, cfg.map_nc, cfg.spatial_resolution, cfg.temporal_resolution, cfg.conversion_T, cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.nr_barbel, cfg.spawning_conditions[f'{spawningrange}'], cfg.adult_conditions, cfg.fish_exploring[f'{fishadventuring}'], cfg.attitude[f'{fishattitude}'], cfg.filtersize, cfg.data_T_res)
-                    # dynFrw = pcrfw.DynamicFramework(myModel, cfg.timesteps)
-                    # dynFrw.run()
+                    myModel = FishEnvironment(cfg.input_d, folder_path, cfg.map_nc, cfg.spatial_resolution, cfg.temporal_resolution, cfg.conversion_T, cfg.xmin, cfg.ymin, cfg.xmax, cfg.ymax, cfg.nr_barbel, cfg.spawning_conditions[f'{spawningrange}'], cfg.adult_conditions, cfg.fish_exploring[f'{fishadventuring}'], cfg.attitude[f'{fishattitude}'], cfg.filtersize, cfg.data_T_res)
+                    dynFrw = pcrfw.DynamicFramework(myModel, cfg.timesteps)
+                    dynFrw.run()
                     # exporting the results to csvs, gpgks and tifs
-                    # print (f'exporting the config:{fishattitude}_{fishadventuring}_{spawningrange}')
+                    print (f'exporting the config:{fishattitude}_{fishadventuring}_{spawningrange}')
                     export = Export(folder_path, cfg.timesteps, cfg.spatial_resolution)
                     export.Barbel()
-                    # print ('exporting barbel csvs...:')
-                    # export.Barbel_csv()
-                    
-                    #export.CommonMeuse_clumpcsv()
-                    # export.Barbel_gpkg()
-                    #print ('exporting spawn csvs...:')
-                    #export.CommonMeuse_spawncsv()
-                    # export.CommonMeuse_swimcsv()
+                    print ('exporting barbel csvs...:')
+                    export.Barbel_csv()
                     export.Barbel_gpkg()
-                    # export.CommonMeuse_spawntif()
-                    # export.CommonMeuse_connectedswimtif()
                     print (f'done with the config: {fishattitude}_{fishadventuring}_{spawningrange}')
 

@@ -32,13 +32,13 @@ sys.path.append(f'{post_processing}')
 # importing modules 
 
 
-sumSpawners_overTime = np.zeros ((8, cfg.timesteps))
-modesAccessed = np.zeros ((8,3))
-SpawnersDistances = np.zeros((8, cfg.nr_barbel))
+sumSpawners_overTime = np.zeros ((4, cfg.timesteps))
+modesAccessed = np.zeros ((4,3))
+SpawnersDistances = np.zeros((4, cfg.nr_barbel))
 TotalSpawnArea_overTime = np.zeros((2,cfg.timesteps))
-Barbelsw_Access_overTime = np.zeros((8,cfg.timesteps))
+Barbelsw_Access_overTime = np.zeros((4,cfg.timesteps))
 scenarios = ['sensitivity_output','non_hydropeaking']
-scenario_names = np.full(8, 'no_folder_yet', dtype='<U100')
+scenario_names = np.full(4, 'no_folder_yet', dtype='<U100')
 b=0
 for i, directory in enumerate(scenarios):
     fielddata_set = os.path.join(disk, directory, 'focussed_traveller_initial_range')
@@ -49,34 +49,37 @@ for i, directory in enumerate(scenarios):
     TotalSpawnArea_overTime [i,:] = lastrow
     for fishadventuring in cfg.fish_exploring.keys():
         for fishattitude in cfg.attitude.keys():
-            # Create a folder for this parameter combination and link everything: 
-            folder_name = f"{fishattitude}_{fishadventuring}_initial_range"
-            folder_path = os.path.join(disk, directory, folder_name)
-            if directory == 'sensitivity_output':
-                data_setting = 'Hydropeaking'
-            else: 
-                data_setting = 'Non-hydropeaking'
-            scenario_names [b]= f"{data_setting}_{fishattitude}_{fishadventuring}"
+            if fishattitude == 'wandering':
+                pass
+            else:
+                # Create a folder for this parameter combination and link everything: 
+                folder_name = f"{fishattitude}_{fishadventuring}_initial_range"
+                folder_path = os.path.join(disk, directory, folder_name)
+                if directory == 'sensitivity_output':
+                    data_setting = 'Hydropeaking'
+                else: 
+                    data_setting = 'Filtered'
+                scenario_names [b]= f"{data_setting} {fishattitude} {fishadventuring}"
+                
+                # create a 
+                spawnFilename = os.path.join(folder_path,f'has_spawned_has_spawned.csv')
+                MoveModeFilename = os.path.join (folder_path, f'movemode_movemode.csv')
+                DistanceSwamFilename = os.path.join (folder_path, f'distance_swam_swimdistance.csv')
+                BarbelAccessFilename= os.path.join (folder_path, f'available_area_spawning_area.csv')
+                Spawners_df = pd.read_csv (spawnFilename)
+                MoveMode_df = pd.read_csv (MoveModeFilename)
+                distance_df = pd.read_csv (DistanceSwamFilename)
+                
+                BarbelAccess_toSpawningArea_df = pd.read_csv (BarbelAccessFilename)
+                SpawnersDistances [b,:]= np.multiply(Spawners_df.to_numpy()[-1,:],distance_df.to_numpy()[-1,:]) 
+                modesAccessed [b,0] = np.sum (MoveMode_df.to_numpy()==2)
+                modesAccessed [b,1] = np.sum (MoveMode_df.to_numpy()==3)
+                modesAccessed [b,2] = np.divide(modesAccessed [b,0],modesAccessed[b,1])*100 
+                # modesAccessed [b,3] = np.sum (MoveMode_df.to_numpy()==1)
+                sumSpawners_overTime [b,:]= np.sum (Spawners_df.to_numpy(), axis=1)
             
-            # create a 
-            spawnFilename = os.path.join(folder_path,f'has_spawned_has_spawned.csv')
-            MoveModeFilename = os.path.join (folder_path, f'movemode_movemode.csv')
-            DistanceSwamFilename = os.path.join (folder_path, f'distance_swam_swimdistance.csv')
-            BarbelAccessFilename= os.path.join (folder_path, f'available_area_spawning_area.csv')
-            Spawners_df = pd.read_csv (spawnFilename)
-            MoveMode_df = pd.read_csv (MoveModeFilename)
-            distance_df = pd.read_csv (DistanceSwamFilename)
-            
-            BarbelAccess_toSpawningArea_df = pd.read_csv (BarbelAccessFilename)
-            SpawnersDistances [b,:]= np.multiply(Spawners_df.to_numpy()[-1,:],distance_df.to_numpy()[-1,:]) 
-            modesAccessed [b,0] = np.sum (MoveMode_df.to_numpy()==2)
-            modesAccessed [b,1] = np.sum (MoveMode_df.to_numpy()==3)
-            modesAccessed [b,2] = np.divide(modesAccessed [b,0],modesAccessed[b,1])*100 
-            # modesAccessed [b,3] = np.sum (MoveMode_df.to_numpy()==1)
-            sumSpawners_overTime [b,:]= np.sum (Spawners_df.to_numpy(), axis=1)
-        
-            Barbelsw_Access_overTime [b,:] = np.sum (BarbelAccess_toSpawningArea_df.to_numpy() > 0, axis=1)
-            b+=1
+                Barbelsw_Access_overTime [b,:] = np.sum (BarbelAccess_toSpawningArea_df.to_numpy() > 0, axis=1)
+                b+=1
 # categorical so pd dataframe: 
 Column_MoveMode = ['Nearest', 'Directed/Random', 'Relative nearest'] 
 modesAccessed_df = pd.DataFrame(modesAccessed, index=scenario_names, columns=Column_MoveMode)
@@ -99,22 +102,22 @@ colormap = ListedColormap(sns_colormap)
 # Plotting 
 
 # Plotting each line for different wandering and focussed
-fig, axs = plt.subplots(2, 2, figsize=(12, 8))  # Create a 2x2 grid of subplots
+fig, axs = plt.subplots(1, 2, figsize=(12, 6))  # Create a 2x2 grid of subplots
 # Define the indices for the lines you want to plot in each subplot
-lines_per_subplot = [[0, 4], [1, 5], [2,6], [3, 7]]
+lines_per_subplot = [[0, 2], [1, 3]]
 c=0
 for ax, line_indices in zip(axs.flatten(), lines_per_subplot):
     for i, index in enumerate(line_indices):
         ax.plot(datetime_vector, sumSpawners_overTime[index, :], 
                 label=f'{scenario_names[index]}', linestyle=['-', '--'][i], 
-                color=colors[c])  # Cycle through colors if needed
+                color=colors[c])  
     c+=1
     ax.xaxis.set_major_formatter(mdates.DateFormatter('%Y-%m-%d'))
     ax.xaxis.set_major_locator(mdates.AutoDateLocator())
     ax.tick_params(axis='both', labelsize=12)  # Adjust tick labels size
     ax.set_xlabel('Date', fontsize=14)
 
-    if line_indices ==[0,4] or line_indices ==[2,6]:
+    if line_indices ==[0,2]:
         ax.set_ylabel('Population\'s spawning success (%)', fontsize=13) # only set y axis label for the most right plots
     else: 
         ax.set_yticklabels([]) # remove tick labels for the most right plots  

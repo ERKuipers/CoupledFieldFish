@@ -1,8 +1,10 @@
 import campo
 import pcraster as pcr 
 from op_fields import new_property_from_property, spatial_operation_one_argument
+from campo.property import Property
 import numpy as np 
-
+import matplotlib.pyplot as plt
+import math
 def swimmable (self, waterdepth, flow_velocity, prop_name):
     '''
     field waterdepth and field_flow velocity should have the same size
@@ -19,12 +21,32 @@ def swimmable (self, waterdepth, flow_velocity, prop_name):
     swimmable = campo.where (self.water.area.spawning_true, self.water.area.true, self.water.area.false)
     return swimmable 
 
-def campo_clump (self,boolean_fieldprop):
-    connected_boolean = spatial_operation_one_argument('new_prop_from_prop', boolean_fieldprop, pcr.clump, pcr.Boolean)
+def campo_clump (boolean_fieldprop, field_pset):
+    connected_boolean_prop = Property("_new_property_from_property_name", boolean_fieldprop._pset_uuid, boolean_fieldprop._pset_domain, boolean_fieldprop._shape)
+    for fidx, area in enumerate (field_pset.space_domain): 
+        nrCols = int(area[5])
+        nrRows = int(area[4])
+        west = area [0]
+        north = area [3]
+        cellSize = math.fabs (area[2] - west)/nrCols
+    boolean_ar = (boolean_fieldprop.values()[0]).astype(int)
+    print (boolean_ar.shape)
+    print (nrRows, nrCols)
+    plt.imshow(boolean_ar)
+    plt.colorbar()
+    plt.show()
+    pcr.setclone (nrRows, nrCols, cellSize, west, north)
+    arg_raster = pcr.numpy2pcr(pcr.Boolean, boolean_ar, np.nan)
+    pcr.plot(arg_raster)
+    result_raster = pcr.clump(arg_raster)
+    result_ar = pcr.pcr2numpy(result_raster, np.nan)
     # overruling value 0 for areas that are not connected to the big 'non-swimmable land' but are still non-swimmable ! 
     # value 0 for any clump which is non-swimmable  
-    connected_boolean_ar = np.where (boolean_fieldprop.values()[0] == 0, 0, connected_boolean.values()[0])  
-    connected_boolean_prop = connected_boolean_ar [np.newaxis,:,:]
+    #boolean_fieldprop.values()[0], shows correct but im not sure if its boolean, seems like it
+
+    connected_boolean_ar = np.where (boolean_fieldprop.values()[0] == 0, 0, result_ar)  
+
+    connected_boolean_prop.values()[0] = connected_boolean_ar
     return connected_boolean_prop
 
 def connected_swimmable (self, waterdepth, flow_velocity, prop_name):
@@ -56,5 +78,6 @@ def two_conditions_boolean_prop (self, water_depth, flow_velocity, conditions ):
     condition = (water_d >= water_depth_min) & (water_d <= water_depth_max) & (flow_v<=flow_v_max) & (flow_v >= flow_v_min)
     boolean_ar = np.where(condition, 1,0)
     boolean_prop = boolean_ar [np.newaxis,:,:]
+    
     return boolean_prop
 
