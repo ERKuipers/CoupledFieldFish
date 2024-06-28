@@ -27,12 +27,12 @@ disk = Path("D:/thesis/")
 dirNonHydro = disk / 'non_hydropeaking'
 Hydro_output_d = disk / 'sensitivity_output' #"D:/thesis/sensitivity_output/"
 map_nc = input_d / 'maas_data'/'new_fm_map.nc'
-discharge_csv = post_processing / '20190601_20190801_dischargeBorgharenDorp.csv'
+discharge_csv = input_d / 'maas_data'/ '20190601_20190801_dischargeBorgharenDorp.csv'
 clumps = Hydro_output_d / "focussed_traveller_broad_range/clump.csv"
 fish_env = Hydro_output_d / 'fish_environment.lue'
-SwimArea_f = Hydro_output_d /"focussed_homebody_broad_range/total_swimarea.csv"
+SwimArea_f = Hydro_output_d /"wandering_homebody_initial_range/swimmable.csv"
 BroadRangeSpawningArea_f = Hydro_output_d /"wandering_homebody_broad_range/total_spawnarea.csv"
-InitialRangeSpawningArea_f = Hydro_output_d /"wandering_traveller_initial_range/total_spawnarea.csv"
+narrowRangeSpawningArea_f = Hydro_output_d /"wandering_traveller_initial_range/total_spawnarea.csv"
 noHydropeakingSpawningArea_f = dirNonHydro / "focussed_traveller_initial_range/total_spawnarea.csv"
 noHydropeakingSwimArea_f = dirNonHydro / "focussed_traveller_initial_range/total_swimarea.csv"
 nonHydropeaking_Clumps_f = dirNonHydro / "focussed_traveller_initial_range/clump.csv"
@@ -96,15 +96,15 @@ plt.grid(True)
 plt.show()
 
 # Spawnarea
-InitialRangeSpawningArea = pd.read_csv(InitialRangeSpawningArea_f, header = None)
-df_TimeInitialSpawn = pd.DataFrame({'time': datetime_vector_clump, 'initial_spawn': InitialRangeSpawningArea.squeeze()})
-df_TimeInitialSpawn.set_index ('time', inplace=True)
+narrowRangeSpawningArea = pd.read_csv(narrowRangeSpawningArea_f, header = None)
+df_TimenarrowSpawn = pd.DataFrame({'time': datetime_vector_clump, 'narrow_spawn': narrowRangeSpawningArea.squeeze()})
+df_TimenarrowSpawn.set_index ('time', inplace=True)
 BroadRangeSpawningArea = pd.read_csv(BroadRangeSpawningArea_f, header = None)
 df_TimeBroadSpawn = pd.DataFrame({'time': datetime_vector_clump, 'broad_spawn': BroadRangeSpawningArea.squeeze()})
 df_TimeBroadSpawn.set_index ('time', inplace=True)
 
 # combine all with discharge
-Discharge_SpawnArea = df_TimeInitialSpawn.copy()
+Discharge_SpawnArea = df_TimenarrowSpawn.copy()
 Discharge_SpawnArea ['discharge'] = discharge_interp['discharge']
 Discharge_SpawnArea ['broad_spawn'] = df_TimeBroadSpawn ['broad_spawn']
 
@@ -198,7 +198,7 @@ plt.tight_layout()
 plt.show()
 
 fig, (ax1, ax2, ax3) = plt.subplots(3, 1, figsize=(10, 7))
-# Plotting initial_spawn on ax1
+# Plotting narrow_spawn on ax1
 
 # Plotting broad_spawn on ax2
 ax1.plot(Discharge_SpawnArea.index[1:], Discharge_SpawnArea['broad_spawn'][1:], color=colors[2], label='Broad spawning preference')
@@ -208,7 +208,7 @@ ax1.tick_params(axis='y')
 ax1.label_outer()
 
 
-ax2.plot(Discharge_SpawnArea.index[1:], Discharge_SpawnArea['initial_spawn'][1:], color='orchid', label='Initial spawning preference')
+ax2.plot(Discharge_SpawnArea.index[1:], Discharge_SpawnArea['narrow_spawn'][1:], color='orchid', label='Narrow spawning preference')
 ax2.plot(df_FiltTimeSwim.index[1:], df_FiltTimeSwim['spawn'][1:], color='indigo', label='Filtered flow regime')
 ax2.set_ylabel('Spawn area ($m^2$)')
 ax2.legend(loc='lower right')
@@ -238,18 +238,18 @@ plt.scatter(Discharge_Clumps['discharge'], Discharge_Clumps['clumps'], s=15, col
 slope,intercept,r_value,p_value, std_err = linregress(Discharge_Clumps['discharge'],Discharge_Clumps['clumps'])
 
 line = slope * discharge_extent + intercept
-plt.plot(discharge_extent, line, color='mediumturquoise', label=f'Best fit hydropeaking: y={slope:.2f}x+{intercept:.0f}, $R^2$:{r_value:.2f}')
+plt.plot(discharge_extent, line, color='mediumturquoise',linewidth=2, label=f'Best fit hydropeaking: $R^2$={r_value:.2f}')
 # now for unfiltered data: 
-plt.scatter(df_FiltTimeSwim['discharge'],df_FiltTimeSwim['clumps'], s=15, color='darkred', label ='Filtered flow regime')
+plt.scatter(df_FiltTimeSwim['discharge'],df_FiltTimeSwim['clumps'],  s=15, color='darkred', label ='Filtered flow regime')
 mask = ~np.isnan(df_FiltTimeSwim['discharge']) & ~np.isnan(df_FiltTimeSwim['clumps'])
 x_clean = df_FiltTimeSwim['discharge'][mask]
 y_clean = df_FiltTimeSwim['clumps'][mask]
 slope,intercept,r_value,p_value, std_err = linregress(x_clean,y_clean)
 line = slope * filtdischarge_extent + intercept
-plt.plot(filtdischarge_extent, line, color='teal', label=f'Best fit filtered: y={slope:.2f}x+{intercept:.0f}, $R^2$:{r_value:.2f}')
+plt.plot(filtdischarge_extent, line, color='teal', linewidth=2, label=f'Best fit filtered: $R^2$={r_value:.2f}')
 plt.xscale ('log')
 plt.yscale ('log')
-plt.ylabel ('Number of clumps')
+plt.ylabel ('Number of patches')
 plt.xlabel ('Discharge ($m^3/s$)')
 plt.legend(loc='best', frameon=False)
 plt.tight_layout()
@@ -263,7 +263,7 @@ x_clean = Discharge_SwimArea['discharge'][mask]
 y_clean = Discharge_SwimArea['patchsize'][mask]
 slope,intercept,r_value,p_value, std_err = linregress(x_clean,y_clean)
 line = slope * discharge_extent + intercept
-plt.plot(discharge_extent, line, color='mediumturquoise', label=f'Best fit hydropeaking: \n y={slope:.2f}x+{intercept:.0f}, $R^2$:{r_value:.2f}')
+plt.plot(discharge_extent, line, linewidth=2, color='mediumturquoise', label=f'Hydropeaking best fit:\n$R^2$={r_value:.2f}')
 # now for unfiltered data: 
 plt.scatter(df_FiltTimeSwim['discharge'],df_FiltTimeSwim['patchsize'], s=15, color='darkred', label ='Filtered flow regime')
 mask = ~np.isnan(df_FiltTimeSwim['discharge']) & ~np.isnan(df_FiltTimeSwim['patchsize'])
@@ -271,7 +271,7 @@ x_clean = df_FiltTimeSwim['discharge'][mask]
 y_clean = df_FiltTimeSwim['patchsize'][mask]
 slope,intercept,r_value,p_value, std_err = linregress(x_clean,y_clean)
 line = slope * filtdischarge_extent + intercept
-plt.plot(filtdischarge_extent, line, color='teal', label=f'Best fit filtered: \n y={slope:.2f}x+{intercept:.0f}, $R^2$:{r_value:.2f}')
+plt.plot(filtdischarge_extent, line, linewidth=2, color='teal', label=f'Filtered best fit:\n $R^2$={r_value:.2f}')
 plt.xscale ('log')
 plt.yscale ('log')
 plt.ylabel ('Patchsize ($m^2$)')
@@ -284,34 +284,36 @@ plt.legend(loc='upper right')# bbox_to_anchor=(1.5, 1))
 plt.show()
 
 # DISCHARGE TO SPAWN AREA RELATION
-plt.figure() # plt.title ('Discharge and spawn area availability')
+plt.figure(figsize=(10,5)) # plt.title ('Discharge and spawn area availability')
 
 plt.scatter(Discharge_SpawnArea['discharge'], Discharge_SpawnArea['broad_spawn'], s=15, color = colors[2], label = 'Broad preferences')
 mask = ~np.isnan(Discharge_SpawnArea['discharge']) & ~np.isnan(Discharge_SpawnArea['broad_spawn'])
 x_clean = Discharge_SpawnArea['discharge'][mask]
 y_clean = Discharge_SpawnArea['broad_spawn'][mask]
 slope,intercept,r_value,p_value, std_err = linregress(x_clean,y_clean)
-line = slope * discharge_extent + intercept
-plt.plot(discharge_extent, line, color='indianred', label=f'Best fit broad: y={slope:.0f}x+{intercept:.1e}, $R^2$:{r_value:.2f}')
-plt.scatter(Discharge_SpawnArea['discharge'], Discharge_SpawnArea['initial_spawn'], s=15, color = 'orchid', label = 'Initial preferences')
-mask = ~np.isnan(Discharge_SpawnArea['discharge']) & ~np.isnan(Discharge_SpawnArea['initial_spawn'])
+line = slope * filtdischarge_extent + intercept
+plt.plot(filtdischarge_extent, line, color='indianred',linewidth=2,  label=f'Best fit broad: $R^2$:{r_value:.2f}')
+plt.scatter(Discharge_SpawnArea['discharge'], Discharge_SpawnArea['narrow_spawn'], s=15, color = 'orchid', label = 'Narrow preferences')
+mask = ~np.isnan(Discharge_SpawnArea['discharge']) & ~np.isnan(Discharge_SpawnArea['narrow_spawn'])
 x_clean = Discharge_SpawnArea['discharge'][mask]
-y_clean = Discharge_SpawnArea['initial_spawn'][mask]
+y_clean = Discharge_SpawnArea['narrow_spawn'][mask]
 slope,intercept,r_value,p_value, std_err = linregress(x_clean,y_clean)
-line = slope * discharge_extent + intercept
-plt.plot(discharge_extent, line, color='gold', label=f'Best fit initial: y={slope:.0f}x+{intercept:.1e}, $R^2$:{r_value:.2f}')
-plt.scatter (df_FiltTimeSwim['discharge'],df_FiltTimeSwim['spawn'], s=15, color ='indigo', label ='Filtered flow regime')
+line = slope * filtdischarge_extent + intercept
+plt.plot(filtdischarge_extent, line, color='yellow',linewidth=2,  label=f'Best fit narrow: $R^2$:{r_value:.2f}')
+plt.scatter (df_FiltTimeSwim['discharge'],df_FiltTimeSwim['spawn'], s=15, color ='indigo', label ='Filtered flow regime, \nnarrow preferences')
 mask = ~np.isnan(df_FiltTimeSwim['discharge']) & ~np.isnan(df_FiltTimeSwim['spawn'])
 x_clean = df_FiltTimeSwim['discharge'][mask]
 y_clean = df_FiltTimeSwim['spawn'][mask]
 slope,intercept,r_value,p_value, std_err = linregress(x_clean,y_clean)
 line = slope * filtdischarge_extent + intercept
-plt.plot(filtdischarge_extent, line, color='darkgoldenrod', label=f'Best fit filtered: y={slope:.0f}x+{intercept:.1e}, $R^2$:{r_value:.2f}')
+plt.plot(filtdischarge_extent, line, color='lime', linewidth=2, label=f'Best fit filtered: $R^2$:{r_value:.2f}')
+plt.ylim([3000,110000])
 plt.xscale ('log')
 plt.yscale ('log')
 plt.ylabel ('Spawnarea available ($m^2$)')
 plt.xlabel ('Discharge ($m^3/s$)')
-plt.legend(frameon=False)
+
+plt.legend(bbox_to_anchor=(1,1))
 plt.tight_layout()
 plt.show()
 
@@ -323,7 +325,7 @@ x_clean = Discharge_SwimArea['discharge'][mask]
 y_clean = Discharge_SwimArea['swim'][mask]
 slope,intercept,r_value,p_value, std_err = linregress(x_clean,y_clean)
 line = slope * discharge_extent + intercept
-plt.plot(discharge_extent, line, color='gold', label=f'Best fit initial: \n y={slope:.0f}x+{intercept:.1e}, $R^2$:{r_value:.2f}')
+plt.plot(discharge_extent, line, color='yellow', linewidth=2, label=f'Best fit hydropeaking:  $R^2$:{r_value:.2f}')
 plt.scatter (df_FiltTimeSwim['discharge'],df_FiltTimeSwim['swim'], s=15, color ='indigo', label ='Filtered flow regime')
 mask = ~np.isnan(df_FiltTimeSwim['discharge']) & ~np.isnan(df_FiltTimeSwim['swim'])
 x_clean = df_FiltTimeSwim['discharge'][mask]
@@ -331,7 +333,7 @@ y_clean = df_FiltTimeSwim['swim'][mask]
 slope,intercept,r_value,p_value, std_err = linregress(x_clean,y_clean)
 line = slope * filtdischarge_extent + intercept
 plt.xlim([9,2000])
-plt.plot(filtdischarge_extent, line, color='darkgoldenrod', label=f'Best fit filtered: \n y={slope:.0f}x+{intercept:.1e}, $R^2$:{r_value:.2f}')
+plt.plot(filtdischarge_extent, line, color='lime', linewidth=2, label=f'Best fit filtered:$R^2$:{r_value:.2f}')
 plt.xscale ('log')
 plt.yscale ('log')
 plt.ylabel ('Swimarea available ($m^2$)')

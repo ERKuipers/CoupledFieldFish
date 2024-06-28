@@ -17,9 +17,9 @@ import pcraster.framework as pcrfw
 import campo
 import numpy as np 
 from matplotlib import pyplot as plt
-from lifecycle_pref import two_conditions_boolean_prop, campo_clump
-from moving_to_coordinates import move
-from xugrid_func import partial_reraster
+from field_agent.habitat_suitability import two_conditions_boolean_prop, campo_clump
+from move_op.moving_to_coordinates import move
+from pre_processing.xugrid_func import partial_reraster
 
 #########
 # model #

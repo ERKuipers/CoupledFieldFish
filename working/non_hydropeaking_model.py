@@ -18,9 +18,9 @@ import campo
 import numpy as np 
 import pandas as pd
 from matplotlib import pyplot as plt
-from lifecycle_pref import two_conditions_boolean_prop, campo_clump
-from moving_to_coordinates import move
-from xugrid_func import MovingAverage_reraster
+from field_agent.habitat_suitability import two_conditions_boolean_prop, campo_clump
+from move_op.moving_to_coordinates import move
+from pre_processing.xugrid_func import MovingAverage_reraster
 
 #########
 # model #
@@ -96,12 +96,12 @@ class FishEnvironment(pcrfw.DynamicModel):
         self.water.area.zero = 0 
         self.water.area.one = 1
         #  Property Flow velocity # 
-        u_array = pd.read_csv(f'{self.input_dir}/waterdepth_{self.currentTimeStep()}.csv' , sep=',', header=None)
-        self.water.area.flow_velocity = (u_array.to_numpy()) [np.newaxis, :, :]
+        u_array = MovingAverage_reraster (self.map_nc, self.resolution, self.data_t, 'mesh2d_ucmag', self.xmin, self.xmax, self.ymin, self.ymax, self.filtersize, self.delta_t, self.data_DeltaTimestep)
+        self.water.area.flow_velocity = u_array[np.newaxis, :, :]
         self.water.area.flow_velocity.is_dynamic = True
         # Property Water Depth # 
-        d_array = pd.read_csv(f'{self.input_dir}/flowvelocity_{self.currentTimeStep()}.csv' , sep=',', header=None)
-        self.water.area.water_depth = (d_array.to_numpy()) [np.newaxis, :, :]
+        d_array = MovingAverage_reraster (self.map_nc, self.resolution, self.data_t, 'mesh2d_waterdepth', self.xmin, self.xmax, self.ymin, self.ymax, self.filtersize, self.delta_t, self.data_DeltaTimestep)
+        self.water.area.water_depth = d_array [np.newaxis, :, :]
         self.water.area.water_depth.is_dynamic = True
 
         self.water.area.spawning_grounds = two_conditions_boolean_prop (self, self.water.area.water_depth, self.water.area.flow_velocity, self.spawning_conditions)
@@ -118,12 +118,12 @@ class FishEnvironment(pcrfw.DynamicModel):
         start = datetime.datetime.now()
         self.data_t = int(self.currentTimeStep()*self.conversion_T) # update the  given data timestep with updated current timestep as by the pcraster framework 
         # first setting environmental variables, then positioning the barbels as a response to the alternation in habitat
-        u_array = pd.read_csv(f'{self.input_dir}/flowvelocity_{self.currentTimeStep()}.csv' , sep=',', header=None)
-        self.water.area.flow_velocity = (u_array.to_numpy()) [np.newaxis, :, :]
+        u_array = MovingAverage_reraster (self.map_nc, self.resolution, self.data_t, 'mesh2d_ucmag', self.xmin, self.xmax, self.ymin, self.ymax, self.filtersize, self.delta_t, self.data_DeltaTimestep)
+        self.water.area.flow_velocity = u_array[np.newaxis, :, :]
 
         # Property Water Depth # 
-        d_array = pd.read_csv(f'{self.input_dir}/waterdepth_{self.currentTimeStep()}.csv' , sep=',', header=None)
-        self.water.area.water_depth = (d_array.to_numpy()) [np.newaxis, :, :]
+        d_array = MovingAverage_reraster (self.map_nc, self.resolution, self.data_t, 'mesh2d_waterdepth', self.xmin, self.xmax, self.ymin, self.ymax, self.filtersize, self.delta_t, self.data_DeltaTimestep)
+        self.water.area.water_depth = d_array [np.newaxis, :, :]
         # creating boolean and clump fields describing swimmable and spawning grounds
         self.water.area.spawning_grounds = two_conditions_boolean_prop (self, self.water.area.water_depth, self.water.area.flow_velocity, self.spawning_conditions)
         self.water.area.swimmable = two_conditions_boolean_prop(self, self.water.area.water_depth, self.water.area.flow_velocity, self.adult_conditions)

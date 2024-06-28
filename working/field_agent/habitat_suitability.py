@@ -1,25 +1,16 @@
 import campo
 import pcraster as pcr 
-from op_fields import new_property_from_property, spatial_operation_one_argument
+
 from campo.property import Property
 import numpy as np 
 import matplotlib.pyplot as plt
 import math
-def swimmable (self, waterdepth, flow_velocity, prop_name):
-    '''
-    field waterdepth and field_flow velocity should have the same size
-    ''' 
-    swimmable = new_property_from_property (prop_name, waterdepth, 0.0)
-    #connected_swimmable = _new_property_from_property (waterdepth, 0.0)
-    self.water.area.deep_enough = waterdepth >= 0.1 #.30 
-    self.water.area.not_drowning = waterdepth <= 1 # should be 0.4
-    self.water.area.not_drifting = flow_velocity <= 0.5# should be 0.5
-    self.water.area.rheophilic = flow_velocity >= 0.05 #.35 
-    self.water.area.spawning_true = self.water.area.deep_enough*self.water.area.not_drowning*self.water.area.not_drifting*self.water.area.rheophilic
-    self.water.area.true = 1
-    self.water.area.false = 0
-    swimmable = campo.where (self.water.area.spawning_true, self.water.area.true, self.water.area.false)
-    return swimmable 
+import campo
+import pcraster as pcr 
+# see campo documentation for these functions:
+import numpy as np 
+
+
 
 def campo_clump (boolean_fieldprop, field_pset):
     connected_boolean_prop = Property("_new_property_from_property_name", boolean_fieldprop._pset_uuid, boolean_fieldprop._pset_domain, boolean_fieldprop._shape)
@@ -30,29 +21,21 @@ def campo_clump (boolean_fieldprop, field_pset):
         north = area [3]
         cellSize = math.fabs (area[2] - west)/nrCols
     boolean_ar = (boolean_fieldprop.values()[0]).astype(int)
-    print (boolean_ar.shape)
-    print (nrRows, nrCols)
     plt.imshow(boolean_ar)
     plt.colorbar()
     plt.show()
     pcr.setclone (nrRows, nrCols, cellSize, west, north)
-    arg_raster = pcr.numpy2pcr(pcr.Boolean, boolean_ar, np.nan)
+    arg_raster = pcr.numpy2pcr(pcr.Boolean, boolean_ar, -1000)
     pcr.plot(arg_raster)
     result_raster = pcr.clump(arg_raster)
-    result_ar = pcr.pcr2numpy(result_raster, np.nan)
+    result_ar = pcr.pcr2numpy(result_raster, -1000)
     # overruling value 0 for areas that are not connected to the big 'non-swimmable land' but are still non-swimmable ! 
     # value 0 for any clump which is non-swimmable  
     #boolean_fieldprop.values()[0], shows correct but im not sure if its boolean, seems like it
 
     connected_boolean_ar = np.where (boolean_fieldprop.values()[0] == 0, 0, result_ar)  
-
     connected_boolean_prop.values()[0] = connected_boolean_ar
     return connected_boolean_prop
-
-def connected_swimmable (self, waterdepth, flow_velocity, prop_name):
-    swimmable_boolean = swimmable (self, waterdepth, flow_velocity, 'swimmable_boolean')
-    connected_swimmable = campo_clump (self, swimmable_boolean)
-    return connected_swimmable
 
 
 def two_conditions_boolean_prop (self, water_depth, flow_velocity, conditions ):

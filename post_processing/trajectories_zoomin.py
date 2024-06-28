@@ -20,6 +20,7 @@ sys.path.append(f'{working}')
 sys.path.append (f'{input_d}')
 sys.path.append(f'{pre_processing}')
 sys.path.append(f'{post_processing}')
+
 # importing modules 
 import sensitivity_config as cfg 
 data_dir = Path(cfg.sens_output_dir).parent 
@@ -28,11 +29,11 @@ if __name__ == "__main__":
     i=0
     fig,axs = plt.subplots(2,2,figsize=(10,18))
     for spawningrange in cfg.spawning_conditions.keys():
-        if spawningrange =='initial_range':
-            name_range = 'narrow range'
+        if spawningrange =='broad_range':
+            name_range = 'broad range'
             continue
         else:
-            name_range = 'broad range'
+            name_range = 'narrow range'
             for regime in regimes: 
                 if regime == 'non_hydropeaking': 
                     name_regime = 'Filtered'
@@ -41,6 +42,7 @@ if __name__ == "__main__":
                     name_regime = 'Hydropeaking'
                     for fishadventuring in cfg.fish_exploring.keys():
                         for fishattitude in cfg.attitude.keys():
+
                             folder_name = f"{fishattitude}_{fishadventuring}_{spawningrange}"
                             folder_path = os.path.join(data_dir, regime, folder_name)
                             # Initialize an empty list to hold GeoDataFrames
@@ -86,11 +88,19 @@ if __name__ == "__main__":
                             last_points_gdf = gpd.GeoDataFrame(last_points, geometry='geometry', crs=all_points.crs)
                             # Plot trajectories
                             ax = axs[i // 2, i % 2]
-                            trajectories.plot(ax=ax, linewidth=0.5, label='Trajectories')
-                            last_points_gdf.plot(ax=ax, color='red', markersize=20, label='Spawn destination', zorder=2)
-                            ax.legend(loc='upper left')
+                            cmap = cm.get_cmap('tab20', 100)  # Using a color map with 20 colors
+                            norm = mcolors.Normalize(vmin=0, vmax=100)
+                            #%% a zoom in: 
+                            for j, (idx, group) in enumerate(trajectories.groupby('id')):
+                                color = cmap(norm(j))  # Get a color from the colormap
+                                group.plot(ax=ax, linewidth=1, color=color)
+                            ax.plot([], [], color='black', linewidth=1, label='Trajectories')
+                            last_points_gdf.plot(ax=ax, color='red', markersize=10, label='Spawn destination', zorder=2)
+                            ax.set_xlim([180000, 183000])
+                            ax.set_ylim([335000, 341000])
+                            ax.set_xticks([180000,181000,182000,183000])
+                            ax.legend(loc='upper left')#,bbox_to_anchor=(1,1))
                             ax.set_title(f'{fishattitude} {fishadventuring}')
-                            ax.set_xlim(cfg.xmin-1, 187000)
                             if i == 0 or i==1 or i == 3: 
                                 ax.label_outer()
                             i += 1
@@ -98,23 +108,6 @@ if __name__ == "__main__":
         plt.tight_layout()
         plt.savefig(os.path.join(cfg.sens_output_dir, 'trajectory.png'))
         plt.show()
-        
+    
 
-#%% a zoom in: 
-plt.figure(figsize=(5,8))
-cmap = cm.get_cmap('tab20', 100)  # Using a color map with 20 colors
-norm = mcolors.Normalize(vmin=0, vmax=100)
 
-for j, (idx, group) in enumerate(trajectories.groupby('id')):
-       color = cmap(norm(j))  # Get a color from the colormap
-       group.plot(ax=plt.gca(), linewidth=1, color=color)
-plt.plot([], [], color='black', linewidth=1, label='Trajectories')
-last_points_gdf.plot(ax=plt.gca(), color='red', markersize=10, label='Spawn destination', zorder=2)
-plt.xlim([180000, 183000])
-plt.ylim([335000, 341000])
-plt.xticks([180000,181000,182000,183000])
-plt.legend(loc='best')#,bbox_to_anchor=(1,1))
-plt.title(f'{name_regime} {fishattitude} {fishadventuring}')
-plt.show()
-
-# %%

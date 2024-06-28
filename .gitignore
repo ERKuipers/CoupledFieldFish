@@ -1,7 +1,8 @@
 # ignore tests folder : https://github.com/computationalgeography/campo/tree/master/source/test
 /tests
 /output
-/input
+/.vscode
+/input/maas_data
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]

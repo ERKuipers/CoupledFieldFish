@@ -5,7 +5,7 @@ working = Path.cwd()
 up_dir = working.parent 
 pre_processing_dir = up_dir / 'pre_processing/'
 sys.path.append(pre_processing_dir)
-from xugrid_func import partial_reraster, MovingAverage_reraster
+from pre_processing.xugrid_func import partial_reraster, MovingAverage_reraster 
 import numpy as np 
 import random
 import math 
@@ -86,6 +86,7 @@ class CommonMeuse():
         Herein data can be called on the basis of the model's timestep (second dimension), does not require configuration to the data timestep 
         the array is +1 larger than the nr of timesteps to account for the initial timestep = 0 , 
         over which the nr of timesteps is started to count in the dynamic section with t = 1 
+        NB: change function 'MovingAverage_reraster' to 'partial_reraster' if you do NOT wish to make a moving average' 
         '''
         u_array = np.zeros (( self.nrrows, self.nrcols )) 
         for t_mod, t in enumerate(self.t_data):

@@ -11,7 +11,7 @@ import matplotlib.lines as mlines
 import seaborn as sns 
 from matplotlib.colors import ListedColormap
 import math
-cur = Path("C:/Users/6402240/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/CoupledFieldFish/working") #Path.cwd()
+cur = Path("C:/Users/els-2/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/CoupledFieldFish/working")#Path("C:/Users/6402240/OneDrive - Universiteit Utrecht/Brain/Thesis/campo_tutorial/fish/CoupledFieldFish/working") #Path.cwd()
 
 up_dir = cur.parent
 
@@ -36,9 +36,14 @@ folder_names = np.full(8, 'no_folder_yet', dtype='<U100')
 for fishadventuring in cfg.fish_exploring.keys():
     for fishattitude in cfg.attitude.keys():
         for spawningrange in cfg.spawning_conditions.keys():
-            # Create a folder for this parameter combination
+            # Check folder for this parameter combination
             folder_name = f"{fishattitude}_{fishadventuring}_{spawningrange}"
-            folder_names [b]= folder_name
+            if spawningrange =='initial_range':
+                name_range =f'narrow range'
+            else: 
+                name_range= f'broad range'
+            folder_names [b] = f'{fishattitude} {fishadventuring} {name_range}'
+            
             folder_path = os.path.join(output_d, folder_name)
             spawnFilename = os.path.join(folder_path,f'has_spawned_has_spawned.csv')
             MoveModeFilename = os.path.join (folder_path, f'movemode_movemode.csv')
@@ -133,7 +138,6 @@ for ax, line_indices in zip(axs.flatten(), lines_per_subplot):
 
 
 # Adjust layout to accommodate subplots
-
 fig.tight_layout()
 plt.gcf().autofmt_xdate() # Rotate dates for better readability
 plt.show()
@@ -210,3 +214,7 @@ ax1.legend(title='Movement Modes', loc='upper left')
 plt.tight_layout()
 plt.show()
 
+for p, run_name in enumerate(folder_names):
+    col_t = np.where(sumSpawners_overTime[p,:]>=50.0)[0][0]
+    print (f'{run_name}:, timestep for 50% success: {col_t}')
+    print (f'{run_name}: {sumSpawners_overTime[p,-1]}')

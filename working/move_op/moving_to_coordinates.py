@@ -6,19 +6,18 @@ in_dir = Path.cwd()
 up_dir = in_dir.parent
 working = up_dir / 'working'
 sys.path.append(f'{working}')
-from lookup import raster_values_to_feature, zonal_values_to_feature
-from generate_mask import generate_mask
+from field_agent.field_agent_interactions import raster_values_to_feature, zonal_values_to_feature
+from move_op.generate_mask import generate_mask
 import campo
 from sklearn.neighbors import NearestNeighbors
 import math
 import matplotlib.pyplot as plt
 
-def randommove_to_boolean (boolean_fieldprop, resolution, xmin, ymin, nragents):
+def randommove_to_boolean (boolean_fieldprop, field_pset, point_prop):
     '''
     - boolean_fieldprop = a property that is a field and contains true values for places where an agent may move to   
-    - point_propset = the property set that has the move (=point agents)
-    - xmin = minimal extent of the field 
-    - ymin = maximum extent of the field 
+    - field_pset = a property set describing the domain of the field of the study area (Type: propertyset)
+    - point_propset = the property set that has the move (= point agents)
     - nragents = the number of point agents 
     return lists of coordinates with the same length as the number of agents in a point propertyset (sueful wehn you want to make them move there) 
     '''
@@ -30,6 +29,12 @@ def randommove_to_boolean (boolean_fieldprop, resolution, xmin, ymin, nragents):
     else:
         raise TypeError ('boolean_fieldprop needs to be of type campo.property or of a numpy array with same dimensions as field property values')
     
+    nragents = len (point_prop.values().values.values())
+    for fidx, area in enumerate (field_pset.space_domain): 
+        nr_cols = int(area[5])
+        xmin = area [0]
+        ymin = area [1] 
+        resolution = math.fabs (area[2] - xmin)/nr_cols
     # finding the indices of the places where the fieldcondition is true 
     coords_idx = np.argwhere (map_flipped) #coordinates of the spawning grounds in [y,x]
     # collecting the coordinate combination in a tuple so as to prevent them from being 'disconnected' from eachother 
@@ -144,6 +149,7 @@ def move (clump_fieldprop, boolean_fieldprop, dest_fieldprop, point_pset, field_
     
     # this needs to be implemented from the fieldprop so that it does not get overwritten by a 0 value in a next timestep
     for pidx, ID in enumerate (agent_clumpID.values()):
+        # print (ID)
         mask = generate_mask (point_pset, pidx, field_pset, radius) # check, is now flipped
         fieldprop_boolean_value = np.where (clump_fieldprop.values()[0] == ID, 1, 0) # the boolean map describing the clump for each individual fish
         reachable_array = np.multiply (fieldprop_boolean_value, mask) # reachable within clump, works 

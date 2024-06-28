@@ -15,7 +15,7 @@ sys.path.append(f'{post_processing}')
 import config_nonHydroBatch as cfg 
 from non_hydropeaking_model import FishEnvironment 
 from exporting import Export
-from phenomena import CommonMeuse, Fish 
+from pre_processing.phenomena import CommonMeuse, Fish 
 import pcraster 
 import pcraster.framework as pcrfw 
 if __name__ == "__main__":
@@ -28,7 +28,7 @@ if __name__ == "__main__":
     # commonMeuse.waterdepth_array()
     for fishadventuring in cfg.fish_exploring.keys():
         for fishattitude in cfg.attitude.keys():
-            if fishattitude == 'wandering':
+            if fishattitude == 'focussed':
                 continue
             else:
                 for spawningrange in cfg.spawning_conditions.keys():
@@ -49,3 +49,4 @@ if __name__ == "__main__":
                     export.Barbel_gpkg()
                     print (f'done with the config: {fishattitude}_{fishadventuring}_{spawningrange}')
 
+ 

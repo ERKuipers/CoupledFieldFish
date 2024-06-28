@@ -90,7 +90,8 @@ class Export():
 
 if __name__ == "__main__":
    print('exporting')
-   export = Export(f'D:/thesis/sensitivity_output/wandering_homebody_broad_range', cfg.timesteps, cfg.spatial_resolution)
+   export = Export(f'D:/thesis/sensitivity_output/wandering_homebody_initial_range', cfg.timesteps, cfg.spatial_resolution)
    print ('exporting waterdepth...:')
-   export.CommonMeuse_tif('water_depth')
+
+   export.CommonMeuse_sumcsv('swimmable')
 

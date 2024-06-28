@@ -6,7 +6,7 @@ working = up_dir / 'working'
 sys.path.append(str(working))
 import model_config as cfg
 from non_hydropeaking_model import FishEnvironment 
-from phenomena import CommonMeuse, Fish 
+from pre_processing.phenomena import CommonMeuse, Fish 
 import pcraster as pcr
 import pcraster.framework as pcrfw
 
