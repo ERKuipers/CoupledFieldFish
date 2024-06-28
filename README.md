@@ -14,14 +14,14 @@ And some packages
 
 ### SETTING UP MODEL:
 Set up specific configurations using one of the configurations files in the 'input' folder. Please also check settings in the 'phenomena.py' script in the 'pre_processing' folder, 
-which may be altered depending on whether a moving average is required.
+which may be altered depending on whether a moving average over your environmental field data is required.
 
 ### RUNNING THE MODEL: 
-Using one of the files in the 'running' folder and changing the linking to the configurationsetting script you are using.
+Using one of the files in the 'running' folder, you may change the linking to the configuration setting script you are using.
 
 ### EXPORTING THE OUTPUT: 
-Exports are suggested in the same file where a model run is performed. When requiring specific data reduction from some properties, 
-please consult the 'exporting.py' script in the 'post_processing' folder for your options. 
+Exports can be called using the 'exporting.py' script. When requiring specific data reduction from any of the properties as you define them in the model, 
+please consult this script in the 'post_processing' folder for your options. 
 
 ### VISUALISATION AND ANALYSIS:
 Some datareduction visualisation and analysis scripts are suggested in the post_processing folder.
